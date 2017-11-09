@@ -10,6 +10,8 @@
 #include <X11/Xlib.h>
 #include <X11/XKBlib.h>
 
+#include "drawglx.h"
+
 typedef void(*xoverlay_callback_keypress)(unsigned int keycode, int action);
 typedef void(*xoverlay_callback_click)(unsigned int buttoncode, int action);
 typedef void(*xoverlay_callback_scroll)(int value);

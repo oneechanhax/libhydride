@@ -20,7 +20,11 @@ int event_ShapeError;
 int xoverlay_init(struct xoverlay_library *library)
 {
     memset(library, 0, sizeof(struct xoverlay_library));
-
+    glewExperimental = GL_TRUE;
+    if (glewInit() != GL_TRUE)
+    {
+        return -1;
+    }
     if (init_input() < 0)
     {
         return -1;
@@ -40,37 +44,15 @@ int xoverlay_init(struct xoverlay_library *library)
         return -1;
     }
 
-    Window root = DefaultRootWindow(library->display);
-    XVisualInfo info;
+    xoverlay_glx_init(library);
+    xoverlay_glx_create_window(library);
 
-    XMatchVisualInfo(library->display, library->screen, 32, TrueColor, &info);
-    library->colormap = XCreateColormap(library->display, root, info.visual, AllocNone);
-
-    XSetWindowAttributes attr;
-    attr.background_pixmap = None;
-    attr.background_pixel = 0x0;
-    attr.border_pixel = 0;
-    attr.win_gravity = NorthWestGravity;
-    attr.bit_gravity = ForgetGravity;
-    attr.save_under = 1;
-    attr.event_mask = 0;
-    attr.do_not_propagate_mask = 0;
-    attr.override_redirect = 1;
-    attr.colormap = library->colormap;
-
-    unsigned long mask = CWBackPixmap | CWBackPixel | CWBorderPixel | CWWinGravity | CWBitGravity | CWSaveUnder | CWEventMask | CWDontPropagate | CWOverrideRedirect | CWColormap;
-    library->window = XCreateWindow(library->display, root, 0, 0, library->width, library->height, 0, info.depth, InputOutput, info.visual, mask, &attr);
     XShapeCombineMask(library->display, library->window, ShapeInput, 0, 0, None, ShapeSet);
     XShapeSelectInput(library->display, library->window, ShapeNotifyMask);
 
     XserverRegion region = XFixesCreateRegion(library->display, NULL, 0);
     XFixesSetWindowShapeRegion(library->display, library->window, ShapeInput, 0, 0, region);
     XFixesDestroyRegion(library->display, region);
-    XMapWindow(library->display, library->window);
-
-    library->gc = XCreateGC(library->display, library->window, 0, 0);
-    XSetBackground(library->display, library->gc, 0xFFFFFFFF);
-    XSetForeground(library->display, library->gc, 0xFFFF0000);
 
     library->init = 1;
     return 0;
