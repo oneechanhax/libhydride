@@ -46,18 +46,26 @@ draw_state_render(struct draw_state *state)
         if (current->texture != state->texture)
         {
             glBindTexture(GL_TEXTURE_2D, current->texture);
+            state->texture = current->texture;
         }
         if (current->program != state->program)
         {
             if (state->program >= 0)
             {
-                programs[state->program].unload(current);
+                programs[state->program].unload();
             }
-            glUseProgram(programs[current->program].shader);
-            programs[current->program].load(current);
+            if (programs[current->program].shader != state->shader)
+            {
+                glUseProgram(programs[current->program].shader);
+                state->shader = programs[current->program].shader;
+            }
+            programs[current->program].load();
         }
         programs[current->program].render(current);
     }
+    if (state->program >= 0)
+        programs[state->program].unload();
+    state->program = -1;
 }
 
 void
