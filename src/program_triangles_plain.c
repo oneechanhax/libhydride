@@ -16,6 +16,7 @@ DECL_PROGRAM_INIT(triangles_plain)
 
 DECL_PROGRAM_LOAD(triangles_plain)
 {
+    ds_use_shader(programs[PROGRAM_TRIANGLES_PLAIN].shader);
     vertex_buffer_clear(programs[PROGRAM_TRIANGLES_PLAIN].vertex);
 }
 
@@ -23,7 +24,6 @@ DECL_PROGRAM_RENDER(triangles_plain)
 {
     if (programs[PROGRAM_TRIANGLES_PLAIN].vertex->indices->size == 0)
         return;
-    printf("Rendering triangles_plain (%d indices)\n", programs[PROGRAM_TRIANGLES_PLAIN].vertex->indices->size);
     vertex_buffer_render(programs[PROGRAM_TRIANGLES_PLAIN].vertex, GL_TRIANGLES);
 }
 

@@ -277,6 +277,7 @@ ds_render_if_needed()
 void
 ds_pre_render()
 {
+    glClear(GL_COLOR_BUFFER_BIT);
     glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_TEXTURE_BIT | GL_COLOR_BUFFER_BIT);
 
     glEnable(GL_BLEND);
@@ -304,14 +305,17 @@ ds_pre_render()
 void
 ds_post_render()
 {
+    printf("GL error: %s\n", glewGetErrorString(glGetError()));
     glPopClientAttrib();
     glPopAttrib();
+    glFlush();
+    glXSwapBuffers(xoverlay_library.display, xoverlay_library.window);
 }
 
 void
 ds_render_next_frame()
 {
-    glClear(GL_COLOR_BUFFER_BIT);
+    ds_pre_render();
     dis_finish();
     ds.program = -1;
     struct draw_instruction_t *instr;
@@ -336,12 +340,14 @@ ds_render_next_frame()
                 break;
             case DI_PUSH_VERTICES:
                 ds_mark_dirty();
-                printf("program: %d\n", ds.program);
-                vertex_buffer_push_back_vertices(programs[ds.program].vertex, dis_read_data(instr->count * programs[ds.program].vertex_size), instr->count);
+                printf("pushing vertices:\n");
+                float *vert = dis_read_data(instr->count * programs[ds.program].vertex_size);
+                vertex_buffer_push_back_vertices(programs[ds.program].vertex, vert, instr->count);
                 break;
             case DI_PUSH_INDICES:
                 ds_mark_dirty();
-                vertex_buffer_push_back_indices(programs[ds.program].vertex, dis_read_data(instr->count * sizeof(GLuint)), instr->count);
+                GLuint *indices = dis_read_data(instr->count * sizeof(GLuint));
+                vertex_buffer_push_back_indices(programs[ds.program].vertex, indices, instr->count);
                 break;
             case DI_PROGRAM_SWITCH_TEXTURE:
                 ds_bind_texture(instr->texture);
@@ -364,9 +370,7 @@ ds_render_next_frame()
         ds.program = -1;
     }
     dis_reset();
-    glFlush();
-    printf("SwapBuffers\n");
-    glXSwapBuffers(xoverlay_library.display, xoverlay_library.window);
+    ds_post_render();
 }
 
 void
@@ -385,6 +389,7 @@ ds_use_shader(GLuint shader)
     if (ds.shader != shader)
     {
         ds.shader = shader;
+        printf("glUseProgram(%u)\n", shader);
         glUseProgram(shader);
     }
 }
