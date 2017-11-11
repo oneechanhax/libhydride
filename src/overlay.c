@@ -45,6 +45,9 @@ int xoverlay_init()
     if (xoverlay_glx_create_window() < 0)
         return -1;
 
+    textureapi_init();
+    fontapi_init();
+
     xoverlay_library.init = 1;
     return 0;
 }
@@ -53,6 +56,9 @@ void xoverlay_destroy()
 {
     XDestroyWindow(xoverlay_library.display, xoverlay_library.window);
     XCloseDisplay(xoverlay_library.display);
+    xoverlay_glx_destroy();
+    fontapi_destroy();
+    textureapi_destroy();
     xoverlay_library.init = 0;
 }
 
@@ -263,6 +269,11 @@ xoverlay_draw_string_with_outline(xoverlay_vec2_t xy, const char *string, xoverl
     draw_string_with_outline(*(vec2*)&xy, string, font, *(vec4*)&color, *(vec4*)&outline_color, outline_width, adjust_outline_alpha, out_x, out_y);
 }
 
+void
+xoverlay_draw_rect_textured(xoverlay_vec2_t xy, xoverlay_vec2_t hw, xoverlay_rgba_t color, xoverlay_texture_handle texture, xoverlay_vec2_t t_xy, xoverlay_vec2_t t_hw)
+{
+    draw_rect_textured(*(vec2*)&xy, *(vec2*)&hw, *(vec4*)&color, texture, *(vec2*)&t_xy, *(vec2*)&t_hw);
+}
 
 void xoverlay_draw_begin()
 {

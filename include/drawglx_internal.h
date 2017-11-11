@@ -10,6 +10,7 @@
 #include "drawglx.h"
 #include "fontapi_internal.h"
 #include "programs.h"
+#include "textureapi_internal.h"
 
 #include "vector.h"
 #include "vec234.h"
@@ -26,6 +27,7 @@ enum
     DI_PUSH_INDICES,
     DI_PROGRAM_SWITCH_TEXTURE,
     DI_PROGRAM_SWITCH_FONT,
+    DI_TEXTUREAPI_BIND_TEXTURE,
     DI_TERMINATE
 };
 
@@ -42,6 +44,8 @@ struct draw_instruction_t
         GLuint texture;
         /* DI_PROGRAM_SWITCH_FONT */
         xoverlay_font_handle_t font;
+        /* */
+        xoverlay_texture_handle thandle;
     };
 };
 
@@ -97,6 +101,9 @@ void
 dis_program_switch_texture(GLuint texture);
 
 void
+dis_textureapi_switch_texture(xoverlay_texture_handle texture);
+
+void
 dis_program_switch_font(xoverlay_font_handle_t font);
 
 void
@@ -114,6 +121,7 @@ struct draw_state
 
     GLuint                 texture;
     xoverlay_font_handle_t font;
+    xoverlay_texture_handle thandle;
 
     GLuint shader;
 };
@@ -147,6 +155,9 @@ ds_render_next_frame();
 /* To be called by draw functions */
 
 void
+ds_prepare_texture_handle(xoverlay_texture_handle handle);
+
+void
 ds_prepare_texture(GLuint texture);
 
 void
@@ -175,7 +186,7 @@ void
 draw_rect_outline(vec2 xy, vec2 hw, vec4 color, float thickness);
 
 void
-draw_rect_textured(vec2 xy, vec2 hw, vec4 color, int texture, vec2 uv, vec2 st);
+draw_rect_textured(vec2 xy, vec2 hw, vec4 color, xoverlay_texture_handle texture, vec2 t_xy, vec2 t_hw);
 
 void
 draw_string_internal(vec2 xy, const char *string, xoverlay_font_handle_t font, vec4 color, int *out_x, int *out_y);

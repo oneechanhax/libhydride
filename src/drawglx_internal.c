@@ -238,6 +238,26 @@ dis_fetch_instruction()
     return result;
 }
 
+void
+dis_textureapi_switch_texture(xoverlay_texture_handle texture)
+{
+    struct draw_instruction_t *last = dis_last_pushed_instruction();
+
+    if (last && last->type == DI_TEXTUREAPI_BIND_TEXTURE)
+    {
+        last->thandle = texture;
+        return;
+    }
+    else
+    {
+        struct draw_instruction_t instr;
+
+        instr.type = DI_TEXTUREAPI_BIND_TEXTURE;
+        instr.thandle = texture;
+        dis_push_instruction(instr);
+    }
+}
+
 
 void
 ds_init()
@@ -317,6 +337,7 @@ ds_render_next_frame()
     ds_pre_render();
     dis_finish();
     ds.program = -1;
+    ds.thandle = 0;
     ds.font = 0;
     ds.texture = 0;
     ds.shader = 0;
@@ -355,6 +376,9 @@ ds_render_next_frame()
                 break;
             case DI_PROGRAM_SWITCH_FONT:
                 program_freetype_switch_font(instr->font);
+                break;
+            case DI_TEXTUREAPI_BIND_TEXTURE:
+                textureapi_bind(instr->thandle);
                 break;
             case DI_INVALID_INSTRUCTION:
             case DI_TERMINATE:
@@ -401,6 +425,16 @@ ds_use_font(xoverlay_font_handle_t font)
     if (ds.font != font)
     {
         ds.font = font;
+    }
+}
+
+void
+ds_prepare_texture_handle(xoverlay_texture_handle handle)
+{
+    if (handle != ds.thandle)
+    {
+        dis_textureapi_switch_texture(handle);
+        ds.thandle = handle;
     }
 }
 
@@ -527,36 +561,48 @@ draw_rect_outline(vec2 xy, vec2 hw, vec4 color, float thickness)
     draw_line(point, delta, color, thickness);
 }
 
+
 void
-draw_rect_textured(vec2 xy, vec2 hw, vec4 color, int texture, vec2 uv, vec2 st)
+draw_rect_textured(vec2 xy, vec2 hw, vec4 color, xoverlay_texture_handle texture, vec2 t_xy, vec2 t_hw)
 {
+    struct textureapi_texture_t *tx = textureapi_get(texture);
+    if (tx == NULL)
+        return;
+
     ds_prepare_program(PROGRAM_TRIANGLES_TEXTURED);
+    ds_prepare_texture_handle(texture);
+
     GLuint idx = dstream.next_index;
 
     struct vertex_v2ft2fc4f vertices[4];
     /* A C => ABC, CDB
      * B D
      */
-    GLuint indices[6] = { idx, idx + 1, idx + 2, idx + 2, idx + 3, idx + 1 };
+    GLuint indices[6] = { idx, idx + 1, idx + 2, idx + 2, idx + 3, idx };
+
+    float s0 = t_xy.x / tx->width;
+    float s1 = (t_xy.x + t_hw.x) / tx->width;
+    float t0 = t_xy.y / tx->height;
+    float t1 = (t_xy.y + t_hw.y) / tx->height;
 
     vertices[0].pos.x = xy.x;
     vertices[0].pos.y = xy.y;
-    vertices[0].uv = uv;
+    vertices[0].uv = (vec2){ s0, t1 };
     vertices[0].color = color;
 
     vertices[1].pos.x = xy.x;
     vertices[1].pos.y = xy.y + hw.y;
-    vertices[1].uv = (vec2){ uv.x, uv.y + st.y };
+    vertices[1].uv = (vec2){ s0, t0 };
     vertices[1].color = color;
 
     vertices[2].pos.x = xy.x + hw.x;
     vertices[2].pos.y = xy.y + hw.y;
-    vertices[1].uv = (vec2){ uv.x + st.x, uv.y + st.y };
+    vertices[2].uv = (vec2){ s1, t0 };
     vertices[2].color = color;
 
     vertices[3].pos.x = xy.x + hw.x;
     vertices[3].pos.y = xy.y;
-    vertices[1].uv = (vec2){ uv.x + st.x, uv.y };
+    vertices[3].uv = (vec2){ s1, t1 };
     vertices[3].color = color;
 
     dis_push_vertices(4, sizeof(struct vertex_v2ft2fc4f), vertices);

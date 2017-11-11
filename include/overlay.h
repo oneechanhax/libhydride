@@ -8,6 +8,7 @@
 #pragma once
 
 #include "fontapi.h"
+#include "textureapi.h"
 
 #include <X11/Xlib.h>
 #include <X11/XKBlib.h>
@@ -16,7 +17,6 @@ typedef void(*xoverlay_callback_keypress)(unsigned int keycode, int action);
 typedef void(*xoverlay_callback_click)(unsigned int buttoncode, int action);
 typedef void(*xoverlay_callback_scroll)(int value);
 typedef void(*xoverlay_callback_mousemove)(int dx, int dy, int x, int y);
-/* typedef void(*xoverlay_callback_draw)(); */
 
 struct xoverlay_library
 {
@@ -24,7 +24,6 @@ struct xoverlay_library
     xoverlay_callback_click cb_click;
     xoverlay_callback_scroll cb_scroll;
     xoverlay_callback_mousemove cb_mousemove;
-    /* xoverlay_callback_draw cb_draw; */
 
     Display *display;
     Window window;
@@ -42,18 +41,6 @@ struct xoverlay_library
         int x;
         int y;
     } mouse;
-
-    /*struct
-    {
-        int x;
-        int y;
-        char buttons[5];
-    } mouse;
-
-    struct
-    {
-        char keymap[32];
-    } keyboard;*/
 
     char init;
     char drawing;
@@ -107,6 +94,9 @@ xoverlay_draw_rect(xoverlay_vec2_t xy, xoverlay_vec2_t hw, xoverlay_rgba_t color
 
 void
 xoverlay_draw_rect_outline(xoverlay_vec2_t xy, xoverlay_vec2_t hw, xoverlay_rgba_t color, float thickness);
+
+void
+xoverlay_draw_rect_textured(xoverlay_vec2_t xy, xoverlay_vec2_t hw, xoverlay_rgba_t color, xoverlay_texture_handle texture, xoverlay_vec2_t t_xy, xoverlay_vec2_t t_hw);
 
 void
 xoverlay_draw_string(xoverlay_vec2_t xy, const char *string, xoverlay_font_handle_t font, xoverlay_vec4_t color, int *out_x, int *out_y);

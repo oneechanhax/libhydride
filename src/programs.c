@@ -107,8 +107,14 @@ const char *shader_v2ft2fc4f_frag =
         "uniform sampler2D texture;\n"
         "void main()\n"
         "{\n"
-        "        float a = texture2D(texture, gl_TexCoord[0].xy).r;\n"
-        "gl_FragColor = vec4(gl_Color.rgb, gl_Color.a*a);\n"
+        "       vec4 tex = texture2D(texture, gl_TexCoord[0].xy);\n"
+        "       gl_FragColor = vec4(gl_Color.rgb * tex.rgb, gl_Color.a*tex.a);\n"
+        "}";
+const char *shader_v2ft2fc4f_freetype_frag =
+        "uniform sampler2D texture;\n"
+        "void main()\n"
+        "{\n"
+        "       gl_FragColor = vec4(gl_Color.rgb, gl_Color.a * texture2D(texture, gl_TexCoord[0].xy).r);\n"
         "}";
 
 void
@@ -119,6 +125,6 @@ program_init_everything()
     setup_matrices(programs[PROGRAM_TRIANGLES_PLAIN].shader, 0);
     PROGRAM_INIT_INPLACE(&programs[PROGRAM_TRIANGLES_TEXTURED], "vertex:2f,tex_coord:2f,color:4f", shader_v2ft2fc4f_frag, shader_v2ft2fc4f_vert, triangles_textured);
     setup_matrices(programs[PROGRAM_TRIANGLES_TEXTURED].shader, 1);
-    PROGRAM_INIT_INPLACE(&programs[PROGRAM_FREETYPE], "vertex:2f,tex_coord:2f,color:4f", shader_v2ft2fc4f_frag, shader_v2ft2fc4f_vert, freetype);
+    PROGRAM_INIT_INPLACE(&programs[PROGRAM_FREETYPE], "vertex:2f,tex_coord:2f,color:4f", shader_v2ft2fc4f_freetype_frag, shader_v2ft2fc4f_vert, freetype);
     setup_matrices(programs[PROGRAM_FREETYPE].shader, 1);
 }
