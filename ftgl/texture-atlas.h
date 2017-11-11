@@ -110,6 +110,11 @@ typedef struct texture_atlas_t
      */
     unsigned char * data;
 
+    /**
+     * Custom field
+     */
+    char dirty;
+
 } texture_atlas_t;
 
 

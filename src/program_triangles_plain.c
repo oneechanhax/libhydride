@@ -8,6 +8,7 @@
 #include <GL/glew.h>
 
 #include "programs.h"
+#include "drawglx_internal.h"
 
 DECL_PROGRAM_INIT(triangles_plain)
 {

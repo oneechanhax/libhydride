@@ -8,6 +8,7 @@
 #pragma once
 
 #include "drawglx.h"
+#include "fontapi_internal.h"
 #include "programs.h"
 
 #include "vector.h"
@@ -34,13 +35,13 @@ struct draw_instruction_t
     union
     {
         /* DI_SWITCH_PROGRAM */
-        int             program;
+        int    program;
         /* DI_PUSH_VERTICES / DI_PUSH_INDICES */
-        size_t          count;
+        size_t count;
         /* DI_PROGRAM_SWITCH_TEXTURE */
-        GLuint          texture;
+        GLuint texture;
         /* DI_PROGRAM_SWITCH_FONT */
-        texture_font_t *font;
+        xoverlay_font_handle_t font;
     };
 };
 
@@ -96,7 +97,7 @@ void
 dis_program_switch_texture(GLuint texture);
 
 void
-dis_program_switch_font(texture_font_t *font);
+dis_program_switch_font(xoverlay_font_handle_t font);
 
 void
 dis_finish();
@@ -111,7 +112,9 @@ struct draw_state
     int    program;
     int    dirty;
 
-    GLuint texture;
+    GLuint                 texture;
+    xoverlay_font_handle_t font;
+
     GLuint shader;
 };
 
@@ -141,6 +144,14 @@ ds_post_render();
 void
 ds_render_next_frame();
 
+/* To be called by draw functions */
+
+void
+ds_prepare_texture(GLuint texture);
+
+void
+ds_prepare_font(xoverlay_font_handle_t font);
+
 /* To be called from programs */
 
 void
@@ -148,6 +159,9 @@ ds_bind_texture(GLuint texture);
 
 void
 ds_use_shader(GLuint shader);
+
+void
+ds_use_font(xoverlay_font_handle_t font);
 
 /* Primitive Internal Drawing API */
 
@@ -164,13 +178,10 @@ void
 draw_rect_textured(vec2 xy, vec2 hw, vec4 color, int texture, vec2 uv, vec2 st);
 
 void
-draw_string(vec2 xy, const char *string, texture_font_t *font, vec4 color);
+draw_string_internal(vec2 xy, const char *string, xoverlay_font_handle_t font, vec4 color, int *out_x, int *out_y);
 
 void
-draw_string_outline(vec2 xy, const char *string, texture_font_t *font, vec4 color);
+draw_string(vec2 xy, const char *string, xoverlay_font_handle_t font, vec4 color, int *out_x, int *out_y);
 
 void
-draw_string_with_outline(vec2 xy, const char *string, texture_font_t *font, vec4 color, vec4 outline_color);
-
-void
-get_string_size(const char *string, texture_font_t *font, vec2 *out);
+draw_string_with_outline(vec2 xy, const char *string, xoverlay_font_handle_t font, vec4 color, vec4 outline_color, float outline_width, int adjust_outline_alpha, int *out_x, int *out_y);

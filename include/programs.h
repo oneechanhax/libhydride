@@ -9,6 +9,7 @@
 
 #include "freetype-gl.h"
 #include "vertex-buffer.h"
+#include "fontapi.h"
 
 struct draw_cmd;
 
@@ -67,4 +68,4 @@ DECL_PROGRAM(triangles_textured);
 DECL_PROGRAM(freetype);
 
 void
-program_freetype_switch_font(texture_font_t *font);
+program_freetype_switch_font(xoverlay_font_handle_t font);

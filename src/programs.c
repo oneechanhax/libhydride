@@ -108,7 +108,8 @@ const char *shader_v2ft2fc4f_frag =
         "uniform sampler2D texture;\n"
         "void main()\n"
         "{\n"
-        "    gl_FragColor = texture2D(texture, gl_TexCoord[0].xy) * gl_Color;\n"
+        "        float a = texture2D(texture, gl_TexCoord[0].xy).r;\n"
+        "gl_FragColor = vec4(gl_Color.rgb, gl_Color.a*a);\n"
         "}";
 
 void

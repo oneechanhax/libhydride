@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "fontapi.h"
+
 #include <X11/Xlib.h>
 #include <X11/XKBlib.h>
 
@@ -106,6 +108,11 @@ xoverlay_draw_rect(xoverlay_vec2_t xy, xoverlay_vec2_t hw, xoverlay_rgba_t color
 void
 xoverlay_draw_rect_outline(xoverlay_vec2_t xy, xoverlay_vec2_t hw, xoverlay_rgba_t color, float thickness);
 
+void
+xoverlay_draw_string(xoverlay_vec2_t xy, const char *string, xoverlay_font_handle_t font, xoverlay_vec4_t color, int *out_x, int *out_y);
+
+void
+xoverlay_draw_string_with_outline(xoverlay_vec2_t xy, const char *string, xoverlay_font_handle_t font, xoverlay_vec4_t color, xoverlay_vec4_t outline_color, float outline_width, int adjust_outline_alpha, int *out_x, int *out_y);
 
 void xoverlay_poll_events();
 void xoverlay_draw_begin();

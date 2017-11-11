@@ -200,7 +200,7 @@ dis_program_switch_texture(GLuint texture)
 }
 
 void
-dis_program_switch_font(texture_font_t *font)
+dis_program_switch_font(xoverlay_font_handle_t font)
 {
     struct draw_instruction_t *last = dis_last_pushed_instruction();
 
@@ -245,6 +245,7 @@ ds_init()
     memset(&ds, 0, sizeof(struct draw_state));
     dis_init();
     ds.program = -1;
+    ds.font = 0;
     mat4_set_identity(&ds.projection);
     mat4_set_identity(&ds.view);
     mat4_set_identity(&ds.model);
@@ -316,6 +317,9 @@ ds_render_next_frame()
     ds_pre_render();
     dis_finish();
     ds.program = -1;
+    ds.font = 0;
+    ds.texture = 0;
+    ds.shader = 0;
     struct draw_instruction_t *instr;
 
     instr = dis_fetch_instruction();
@@ -374,6 +378,7 @@ ds_bind_texture(GLuint texture)
 {
     if (ds.texture != texture)
     {
+        printf("Swithing texture %u -> %u\n", ds.texture, texture);
         ds.texture = texture;
         glBindTexture(GL_TEXTURE_2D, texture);
     }
@@ -384,8 +389,18 @@ ds_use_shader(GLuint shader)
 {
     if (ds.shader != shader)
     {
+        printf("Switching shader %u -> %u\n", ds.shader, shader);
         ds.shader = shader;
         glUseProgram(shader);
+    }
+}
+
+void
+ds_use_font(xoverlay_font_handle_t font)
+{
+    if (ds.font != font)
+    {
+        ds.font = font;
     }
 }
 
@@ -396,6 +411,26 @@ ds_prepare_program(int program)
     {
         dis_switch_program(program);
         ds.program = program;
+    }
+}
+
+void
+ds_prepare_texture(GLuint texture)
+{
+    if (texture != ds.texture)
+    {
+        dis_program_switch_texture(texture);
+        ds.texture = texture;
+    }
+}
+
+void
+ds_prepare_font(xoverlay_font_handle_t font)
+{
+    if (font != ds.font)
+    {
+        dis_program_switch_font(font);
+        ds.font = font;
     }
 }
 
@@ -529,25 +564,96 @@ draw_rect_textured(vec2 xy, vec2 hw, vec4 color, int texture, vec2 uv, vec2 st)
 }
 
 void
-draw_string(vec2 xy, const char *string, texture_font_t *font, vec4 color)
+draw_string_internal(vec2 xy, const char *string, xoverlay_font_handle_t font, vec4 color, int *out_x, int *out_y)
 {
     ds_prepare_program(PROGRAM_FREETYPE);
+    ds_prepare_font(font);
+
+    texture_font_t *fnt = fontapi_get(font);
+    if (!fnt)
+        return;
+
+    vec2 pen = { xy.x, xy.y };
+    vec2 pen_start = pen;
+    vec2 size = { 0, 0 };
+    texture_font_load_glyphs(fnt, string);
+
+    for (size_t i = 0; i < strlen(string); ++i)
+    {
+        texture_glyph_t *glyph = texture_font_find_glyph(fnt, &string[i]);
+        if (glyph == NULL)
+        {
+            printf("glyph is NULL\n");
+            continue;
+        }
+        if (i > 0)
+        {
+            pen.x += texture_glyph_get_kerning(glyph, &string[i - 1]);
+        }
+
+        float x0 = (pen.x + glyph->offset_x);
+        float y0 = (pen.y - glyph->offset_y);
+        float x1 = (x0 + glyph->width);
+        float y1 = (y0 + glyph->height);
+        float s0 = glyph->s0;
+        float t0 = glyph->t0;
+        float s1 = glyph->s1;
+        float t1 = glyph->t1;
+
+        GLuint idx = dstream.next_index;
+        GLuint indices[] = { idx, idx + 1, idx + 2,
+                             idx + 2, idx + 3, idx };
+        struct vertex_v2ft2fc4f vertices[] = {
+                { (vec2){ x0, y0 }, (vec2){ s0, t0 }, color },
+                { (vec2){ x0, y1 }, (vec2){ s0, t1 }, color },
+                { (vec2){ x1, y1 }, (vec2){ s1, t1 }, color },
+                { (vec2){ x1, y0 }, (vec2){ s1, t0 }, color }
+        };
+
+        dis_push_indices(6, indices);
+        dis_push_vertices(4, sizeof(struct vertex_v2ft2fc4f), vertices);
+
+        pen.x += glyph->advance_x;
+        if (glyph->height > size.y)
+            size.y = glyph->height;
+    }
+    size.x = pen.x - pen_start.x;
+    if (out_x)
+        *out_x = size.x;
+    if (out_y)
+        *out_y = size.y;
 }
 
 void
-draw_string_outline(vec2 xy, const char *string, texture_font_t *font, vec4 color)
+draw_string(vec2 xy, const char *string, xoverlay_font_handle_t font, vec4 color, int *out_x, int *out_y)
 {
     ds_prepare_program(PROGRAM_FREETYPE);
+    ds_prepare_font(font);
+
+    texture_font_t *fnt = fontapi_get(font);
+    fnt->rendermode = RENDER_NORMAL;
+    fnt->outline_thickness = 0.0f;
+
+    draw_string_internal(xy, string, font, color, out_x, out_y);
 }
 
 void
-draw_string_with_outline(vec2 xy, const char *string, texture_font_t *font, vec4 color, vec4 outline_color)
+draw_string_with_outline(vec2 xy, const char *string, xoverlay_font_handle_t font, vec4 color, vec4 outline_color, float outline_width, int adjust_outline_alpha, int *out_x, int *out_y)
 {
     ds_prepare_program(PROGRAM_FREETYPE);
-}
+    ds_prepare_font(font);
 
-void
-get_string_size(const char *string, texture_font_t *font, vec2 *out)
-{
+    if (adjust_outline_alpha)
+        outline_color.a = color.a;
+
+    texture_font_t *fnt = fontapi_get(font);
+
+    fnt->rendermode = RENDER_OUTLINE_POSITIVE;
+    fnt->outline_thickness = outline_width;
+    draw_string_internal(xy, string, font, outline_color, 0, 0);
+
+    fnt->rendermode = RENDER_NORMAL;
+    fnt->outline_thickness = 0.0f;
+    draw_string_internal(xy, string, font, color, out_x, out_y);
 
 }
