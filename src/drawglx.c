@@ -13,6 +13,8 @@
 #include <GL/gl.h>
 #include <string.h>
 #include <stdio.h>
+#include <X11/extensions/shape.h>
+#include <X11/extensions/Xfixes.h>
 
 #define GLX_CONTEXT_MAJOR_VERSION_ARB           0x2091
 #define GLX_CONTEXT_MINOR_VERSION_ARB           0x2092
@@ -112,8 +114,10 @@ int xoverlay_glx_create_window()
     attr.save_under = 1;
     attr.override_redirect = 1;
     attr.colormap = xoverlay_library.colormap;
+    attr.event_mask = (StructureNotifyMask|ExposureMask|PropertyChangeMask|EnterWindowMask|LeaveWindowMask|KeyPressMask|KeyReleaseMask|KeymapStateMask);
+    attr.do_not_propagate_mask = (KeyPressMask|KeyReleaseMask|ButtonPressMask|ButtonReleaseMask|PointerMotionMask|ButtonMotionMask);
 
-    unsigned long mask = CWBackPixel | CWBorderPixel | CWSaveUnder | CWOverrideRedirect | CWColormap;
+    unsigned long mask = CWBackPixel | CWBorderPixel | CWSaveUnder | CWOverrideRedirect | CWColormap | CWEventMask | CWDontPropagate;
     printf("depth %d\n", info->depth);
     xoverlay_library.window = XCreateWindow(xoverlay_library.display, root, 0, 0, xoverlay_library.width, xoverlay_library.height, 0, info->depth, InputOutput, info->visual, mask, &attr);
     if (xoverlay_library.window == 0)
@@ -121,6 +125,14 @@ int xoverlay_glx_create_window()
         printf("X window initialization error\n");
         return -1;
     }
+
+    XShapeCombineMask(xoverlay_library.display, xoverlay_library.window, ShapeInput, 0, 0, None, ShapeSet);
+    XShapeSelectInput(xoverlay_library.display, xoverlay_library.window, ShapeNotifyMask);
+
+    XserverRegion region = XFixesCreateRegion(xoverlay_library.display, NULL, 0);
+    XFixesSetWindowShapeRegion(xoverlay_library.display, xoverlay_library.window, ShapeInput, 0, 0, region);
+    XFixesDestroyRegion(xoverlay_library.display, region);
+
     XFree(info);
     XStoreName(xoverlay_library.display, xoverlay_library.window, "OverlayWindow");
     XMapWindow(xoverlay_library.display, xoverlay_library.window);

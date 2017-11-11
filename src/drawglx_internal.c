@@ -248,7 +248,7 @@ ds_init()
     mat4_set_identity(&ds.projection);
     mat4_set_identity(&ds.view);
     mat4_set_identity(&ds.model);
-    mat4_set_orthographic(&ds.projection, 0, xoverlay_library.width, 0, xoverlay_library.height, -1, 1);
+    mat4_set_orthographic(&ds.projection, 0, xoverlay_library.width, xoverlay_library.height, 0, -1, 1);
 }
 
 void
@@ -268,7 +268,6 @@ ds_render_if_needed()
 {
     if (ds.dirty && ds.program >= 0)
     {
-        printf("calling renderer...\n");
         programs[ds.program].render();
     }
     ds.dirty = 0;
@@ -305,7 +304,6 @@ ds_pre_render()
 void
 ds_post_render()
 {
-    printf("GL error: %s\n", glewGetErrorString(glGetError()));
     glPopClientAttrib();
     glPopAttrib();
     glFlush();
@@ -324,7 +322,6 @@ ds_render_next_frame()
 
     while (instr)
     {
-        printf("instruction: %d data: %d\n", instr->type, instr->program);
         switch (instr->type)
         {
             case DI_SWITCH_PROGRAM:
@@ -340,7 +337,6 @@ ds_render_next_frame()
                 break;
             case DI_PUSH_VERTICES:
                 ds_mark_dirty();
-                printf("pushing vertices:\n");
                 float *vert = dis_read_data(instr->count * programs[ds.program].vertex_size);
                 vertex_buffer_push_back_vertices(programs[ds.program].vertex, vert, instr->count);
                 break;
@@ -389,7 +385,6 @@ ds_use_shader(GLuint shader)
     if (ds.shader != shader)
     {
         ds.shader = shader;
-        printf("glUseProgram(%u)\n", shader);
         glUseProgram(shader);
     }
 }
@@ -397,10 +392,8 @@ ds_use_shader(GLuint shader)
 void
 ds_prepare_program(int program)
 {
-    printf("current program: %d, new: %d\n", ds.program, program);
     if (program != ds.program)
     {
-        printf("switching to program %d from %d\n", program, ds.program);
         dis_switch_program(program);
         ds.program = program;
     }
@@ -412,7 +405,7 @@ draw_line(vec2 xy, vec2 delta, vec4 color, float thickness)
     ds_prepare_program(PROGRAM_TRIANGLES_PLAIN);
     GLuint idx = dstream.next_index;
 
-    struct vertex_v2fc4f vertices[0];
+    struct vertex_v2fc4f vertices[4];
     /* A C => ABC, CDB
      * B D
      */
@@ -454,10 +447,10 @@ draw_rect(vec2 xy, vec2 hw, vec4 color)
     GLuint idx = dstream.next_index;
 
     struct vertex_v2fc4f vertices[4];
-    /* A C => ABC, CDB
-     * B D
+    /* A D => ABC, CDA
+     * B C
      */
-    GLuint indices[6] = { idx, idx + 1, idx + 2, idx + 2, idx + 3, idx + 1 };
+    GLuint indices[6] = { idx, idx + 1, idx + 2, idx + 2, idx + 3, idx };
 
     vertices[0].pos.x = xy.x;
     vertices[0].pos.y = xy.y;

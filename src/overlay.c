@@ -45,13 +45,6 @@ int xoverlay_init()
     if (xoverlay_glx_create_window() < 0)
         return -1;
 
-    XShapeCombineMask(xoverlay_library.display, xoverlay_library.window, ShapeInput, 0, 0, None, ShapeSet);
-    XShapeSelectInput(xoverlay_library.display, xoverlay_library.window, ShapeNotifyMask);
-
-    XserverRegion region = XFixesCreateRegion(xoverlay_library.display, NULL, 0);
-    XFixesSetWindowShapeRegion(xoverlay_library.display, xoverlay_library.window, ShapeInput, 0, 0, region);
-    XFixesDestroyRegion(xoverlay_library.display, region);
-
     xoverlay_library.init = 1;
     return 0;
 }
