@@ -323,8 +323,9 @@ ds_render_next_frame()
     struct draw_instruction_t *instr;
 
     instr = dis_fetch_instruction();
+    char valid = 1;
 
-    while (instr)
+    while (valid && instr)
     {
         switch (instr->type)
         {
@@ -358,6 +359,7 @@ ds_render_next_frame()
             case DI_INVALID_INSTRUCTION:
             case DI_TERMINATE:
             default:
+                valid = 0;
                 break;
 
         }
@@ -378,7 +380,6 @@ ds_bind_texture(GLuint texture)
 {
     if (ds.texture != texture)
     {
-        printf("Swithing texture %u -> %u\n", ds.texture, texture);
         ds.texture = texture;
         glBindTexture(GL_TEXTURE_2D, texture);
     }
@@ -389,7 +390,6 @@ ds_use_shader(GLuint shader)
 {
     if (ds.shader != shader)
     {
-        printf("Switching shader %u -> %u\n", ds.shader, shader);
         ds.shader = shader;
         glUseProgram(shader);
     }
@@ -583,7 +583,6 @@ draw_string_internal(vec2 xy, const char *string, xoverlay_font_handle_t font, v
         texture_glyph_t *glyph = texture_font_find_glyph(fnt, &string[i]);
         if (glyph == NULL)
         {
-            printf("glyph is NULL\n");
             continue;
         }
         if (i > 0)

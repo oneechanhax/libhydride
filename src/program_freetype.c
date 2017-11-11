@@ -48,14 +48,12 @@ program_freetype_switch_font(xoverlay_font_handle_t font)
     texture_font_t *fnt = fontapi_get(font);
     if (fnt == NULL)
         return;
-    printf("Switching font to %u\n", font);
     if (fnt->atlas->id == 0)
     {
         glGenTextures(1, &fnt->atlas->id);
     }
     ds_bind_texture(fnt->atlas->id);
     if (fnt->atlas->dirty) {
-        printf("Refreshing atlas\n");
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

@@ -47,7 +47,6 @@ program_init_inplace(struct program_t *program, const char *vertex_format, const
     program->unload = unload;
     program->destroy = destroy;
     program->vertex = vertex_buffer_new(vertex_format);
-    printf("vertex: %p\n", program->vertex);
 
     program->shader = glCreateProgram();
     GLint status;
