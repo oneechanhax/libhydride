@@ -23,7 +23,7 @@ DECL_PROGRAM_RENDER(triangles_textured)
 {
     if (programs[PROGRAM_TRIANGLES_TEXTURED].vertex->indices->size == 0)
         return;
-    vertex_buffer_render(programs[PROGRAM_TRIANGLES_TEXTURED], GL_TRIANGLES);
+    vertex_buffer_render(programs[PROGRAM_TRIANGLES_TEXTURED].vertex, GL_TRIANGLES);
 }
 
 DECL_PROGRAM_UNLOAD(triangles_textured)

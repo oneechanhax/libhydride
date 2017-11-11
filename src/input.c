@@ -25,7 +25,7 @@ int init_input()
 {
     DIR *dev_input;
     struct dirent *ent;
-    char buffer[256];
+    char buffer[400];
     dev_input = opendir("/dev/input/by-id");
     if (dev_input == NULL)
     {
@@ -36,7 +36,7 @@ int init_input()
     {
         if (fd_keyboard < 0 && strstr(ent->d_name, "-event-kbd"))
         {
-            snprintf(buffer, 256, "/dev/input/by-id/%s", ent->d_name);
+            snprintf(buffer, 400, "/dev/input/by-id/%s", ent->d_name);
             fd_keyboard = open(buffer, O_RDONLY);
             if (fd_keyboard < 0)
             {
@@ -46,7 +46,7 @@ int init_input()
         }
         if (fd_mouse < 0 && strstr(ent->d_name, "-event-mouse"))
         {
-            snprintf(buffer, 256, "/dev/input/by-id/%s", ent->d_name);
+            snprintf(buffer, 400, "/dev/input/by-id/%s", ent->d_name);
             fd_mouse = open(buffer, O_RDONLY);
             if (fd_mouse < 0)
             {

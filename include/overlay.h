@@ -10,8 +10,6 @@
 #include <X11/Xlib.h>
 #include <X11/XKBlib.h>
 
-#include "drawglx.h"
-
 typedef void(*xoverlay_callback_keypress)(unsigned int keycode, int action);
 typedef void(*xoverlay_callback_click)(unsigned int buttoncode, int action);
 typedef void(*xoverlay_callback_scroll)(int value);
@@ -55,33 +53,60 @@ struct xoverlay_library
         char keymap[32];
     } keyboard;*/
 
-    struct xoverlay_glx_state glx;
-
     char init;
     char drawing;
 };
 
-int xoverlay_init(struct xoverlay_library *library);
-void xoverlay_destroy(struct xoverlay_library *library);
+struct xoverlay_library xoverlay_library;
 
-void xoverlay_install_keyboard_callback(struct xoverlay_library *library, xoverlay_callback_keypress callback);
-void xoverlay_install_click_callback(struct xoverlay_library *library, xoverlay_callback_click callback);
-void xoverlay_install_scroll_callback(struct xoverlay_library *library, xoverlay_callback_scroll callback);
-void xoverlay_install_mouse_callback(struct xoverlay_library *library, xoverlay_callback_mousemove callback);
-/* void xoverlay_install_draw_callback(struct xoverlay_library *library, xoverlay_callback_draw callback); */
+typedef struct xoverlay_vec4_t
+{
+    union
+    {
+        float data[4];
+        struct
+        {
+            float r;
+            float g;
+            float b;
+            float a;
+        };
+        struct
+        {
+            float x;
+            float y;
+            float z;
+            float w;
+        };
+    };
+} xoverlay_vec4_t, xoverlay_rgba_t;
 
-int xoverlay_is_button_down(struct xoverlay_library *library, KeyCode code);
+typedef struct xoverlay_vec2_t
+{
+    float x;
+    float y;
+} xoverlay_vec2_t;
 
-unsigned xoverlay_rgb(int r, int g, int b);
-unsigned xoverlay_rgba(int r, int g, int b, int a);
+int  xoverlay_init();
+void xoverlay_destroy();
 
-void xoverlay_clear_rectangle(struct xoverlay_library *library, int x, int y, int w, int h);
-void xoverlay_clear_screen(struct xoverlay_library *library);
+void xoverlay_install_keyboard_callback(xoverlay_callback_keypress callback);
+void xoverlay_install_click_callback(xoverlay_callback_click callback);
+void xoverlay_install_scroll_callback(xoverlay_callback_scroll callback);
+void xoverlay_install_mouse_callback(xoverlay_callback_mousemove callback);
 
-void xoverlay_draw_string(struct xoverlay_library *library, const char *string, int x, int y, unsigned fg, unsigned bg);
-void xoverlay_draw_line(struct xoverlay_library *library, int x, int y, int w, int h, unsigned fg);
-void xoverlay_draw_rectangle(struct xoverlay_library *library, int x, int y, int w, int h, unsigned fg);
+xoverlay_rgba_t xoverlay_rgba(int r, int g, int b, int a);
 
-void xoverlay_poll_events(struct xoverlay_library *library);
-void xoverlay_draw_begin(struct xoverlay_library *library);
-void xoverlay_draw_end(struct xoverlay_library *library);
+void
+xoverlay_draw_line(xoverlay_vec2_t xy, xoverlay_vec2_t delta, xoverlay_rgba_t color, float thickness);
+
+void
+xoverlay_draw_rect(xoverlay_vec2_t xy, xoverlay_vec2_t hw, xoverlay_rgba_t color);
+
+void
+xoverlay_draw_rect_outline(xoverlay_vec2_t xy, xoverlay_vec2_t hw, xoverlay_rgba_t color, float thickness);
+
+
+void xoverlay_poll_events();
+void xoverlay_draw_begin();
+void xoverlay_draw_end();

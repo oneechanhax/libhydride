@@ -10,7 +10,6 @@
 #include <GL/glew.h>
 #include <GL/glx.h>
 
-struct xoverlay_library;
 struct xoverlay_glx_state
 {
     int version_major;
@@ -18,6 +17,8 @@ struct xoverlay_glx_state
     GLXContext context;
 };
 
-int xoverlay_glx_init(struct xoverlay_library *library);
-int xoverlay_glx_create_window(struct xoverlay_library *library);
-int xoverlay_glx_destroy(struct xoverlay_library *library);
+struct xoverlay_glx_state glx_state;
+
+int xoverlay_glx_init();
+int xoverlay_glx_create_window();
+int xoverlay_glx_destroy();

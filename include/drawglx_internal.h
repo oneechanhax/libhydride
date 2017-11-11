@@ -51,6 +51,7 @@ struct draw_instruction_stream_t
     size_t write_ptr;
     size_t read_ptr;
     size_t last_draw_instruction_offset;
+    GLuint next_index;
 };
 
 struct draw_instruction_stream_t dstream;
@@ -79,6 +80,9 @@ dis_push_instruction(struct draw_instruction_t instr);
 size_t
 dis_fetch_data(size_t bytes, void *data);
 
+void*
+dis_read_data(size_t bytes);
+
 void
 dis_switch_program(int program);
 
@@ -100,32 +104,15 @@ dis_finish();
 struct draw_instruction_t*
 dis_fetch_instruction();
 
-struct draw_cmd
-{
-    vector_t *vertices;
-    vector_t *indices;
-
-    int       program;
-    struct program_data_t data;
-};
-
-struct draw_cmd*
-draw_cmd_new(int program);
-
-void
-draw_cmd_delete(struct draw_cmd *cmd);
-
 struct draw_state
 {
     mat4   model, view, projection;
 
     int    program;
+    int    dirty;
 
     GLuint texture;
     GLuint shader;
-
-    struct vector_t *commands;
-    struct size_t    current_command;
 };
 
 struct draw_state ds;
@@ -137,27 +124,41 @@ void
 ds_destroy();
 
 void
-ds_alloc_next_command(int program);
+ds_mark_dirty();
 
 void
-ds_next_frame();
+ds_prepare_program(int program);
 
 void
-ds_render();
+ds_render_if_needed();
 
 void
-ds_prepare_command(int program);
+ds_pre_render();
+
+void
+ds_post_render();
+
+void
+ds_render_next_frame();
+
+/* To be called from programs */
+
+void
+ds_bind_texture(GLuint texture);
+
+void
+ds_use_shader(GLuint shader);
 
 /* Primitive Internal Drawing API */
 
 void
-draw_line(vec2 xy, vec2 delta, vec4 color);
+draw_line(vec2 xy, vec2 delta, vec4 color, float thickness);
 
 void
 draw_rect(vec2 xy, vec2 hw, vec4 color);
 
 void
-draw_rect_outline(vec2 xy, vec2 hw, vec4 color);
+draw_rect_outline(vec2 xy, vec2 hw, vec4 color, float thickness);
 
 void
 draw_rect_textured(vec2 xy, vec2 hw, vec4 color, int texture, vec2 uv, vec2 st);

@@ -10,28 +10,16 @@
 /* Used for drawing primitives */
 struct vertex_v2fc4f
 {
-    float x;
-    float y;
-
-    float r;
-    float g;
-    float b;
-    float a;
+    vec2 pos;
+    vec4 color;
 };
 
 /* Used for drawing textured primitives and freetype-gl fonts */
 struct vertex_v2ft2fc4f
 {
-    float x;
-    float y;
-
-    float s;
-    float t;
-
-    float r;
-    float g;
-    float b;
-    float a;
+    vec2 pos;
+    vec2 uv;
+    vec4 color;
 };
 
 

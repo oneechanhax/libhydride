@@ -1,12 +1,12 @@
 CC=$(shell sh -c "which gcc-7 || which gcc")
 CFLAGS=-O3 -Wall -fPIC -fmessage-length=0 -D_GNU_SOURCE=1 -g3 -ggdb -Iinclude -isystemftgl -isystem/usr/local/include/freetype2 -isystem/usr/include/freetype2
 LDFLAGS=-shared
-LDLIBS=-lm -lX11 -lXext -lrt -lpthread -lXfixes -lGL -lfreetype
+LDLIBS=-lm -lX11 -lXext -lrt -lpthread -lXfixes -lGL -lfreetype -lGLEW
 SRC_DIR=src
 BIN32_DIR=bin32
 BIN64_DIR=bin64
 SOURCES=$(shell find $(SRC_DIR) -name "*.c" -print)
-SOURCES=$(shell find "ftgl" -name "*.c" -print)
+SOURCES+=$(shell find "ftgl" -name "*.c" -print)
 OBJECTS=$(SOURCES:.c=.o)
 
 TARGET32=$(BIN32_DIR)/liboverlay.so.0
@@ -30,8 +30,8 @@ all:
 ifndef ARCH
 	$(MAKE) clean
 	$(MAKE) $(TARGET64) -e ARCH=64
-	$(MAKE) clean
-	$(MAKE) $(TARGET32) -e ARCH=32
+	#$(MAKE) clean
+	#$(MAKE) $(TARGET32) -e ARCH=32
 endif
 	
 install:

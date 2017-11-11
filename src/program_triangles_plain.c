@@ -23,7 +23,8 @@ DECL_PROGRAM_RENDER(triangles_plain)
 {
     if (programs[PROGRAM_TRIANGLES_PLAIN].vertex->indices->size == 0)
         return;
-    vertex_buffer_render(programs[PROGRAM_TRIANGLES_PLAIN], GL_TRIANGLES);
+    printf("Rendering triangles_plain (%d indices)\n", programs[PROGRAM_TRIANGLES_PLAIN].vertex->indices->size);
+    vertex_buffer_render(programs[PROGRAM_TRIANGLES_PLAIN].vertex, GL_TRIANGLES);
 }
 
 DECL_PROGRAM_UNLOAD(triangles_plain)

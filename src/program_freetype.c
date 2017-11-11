@@ -45,3 +45,9 @@ DECL_PROGRAM_DESTROY(freetype)
     texture_font_delete(font);
 }
 
+void
+program_freetype_switch_font(texture_font_t *font)
+{
+
+}
+

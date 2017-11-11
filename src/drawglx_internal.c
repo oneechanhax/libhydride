@@ -6,9 +6,12 @@
  */
 
 #include "drawglx_internal.h"
+#include "vertex_structs.h"
+#include "overlay.h"
 
 #include <memory.h>
 #include <string.h>
+#include <math.h>
 
 int
 drawglx_internal_init()
@@ -16,38 +19,46 @@ drawglx_internal_init()
     return 0;
 }
 
+/* STACK SAFE */
 void
 dis_init()
 {
     dstream.capacity = 128;
     dstream.memory = malloc(dstream.capacity);
-    struct draw_instruction_t *instr = dstream.memory;
-    instr->type = DI_INVALID_INSTRUCTION;
+    dstream.read_ptr = 0;
+    dstream.write_ptr = 0;
+    dstream.next_index = 0;
 }
 
+/* STACK SAFE */
 void
 dis_destroy()
 {
     free(dstream.memory);
 }
 
+/* STACK SAFE */
 void
 dis_reset()
 {
     dstream.write_ptr = 0;
     dstream.read_ptr = 0;
+    dstream.next_index = 0;
 }
 
+/* STACK SAFE */
 void
 dis_reserve(size_t bytes)
 {
     while (dstream.write_ptr + bytes > dstream.capacity)
     {
         dstream.capacity *= 2;
+        dstream.capacity += 4;
         dstream.memory = realloc(dstream.memory, dstream.capacity);
     }
 }
 
+/* STACK SAFE */
 struct draw_instruction_t*
 dis_last_pushed_instruction()
 {
@@ -55,9 +66,14 @@ dis_last_pushed_instruction()
     {
         return NULL;
     }
+    if (dstream.last_draw_instruction_offset + sizeof(struct draw_instruction_t) > dstream.capacity)
+    {
+        return NULL;
+    }
     return (struct draw_instruction_t *)(dstream.memory + dstream.last_draw_instruction_offset);
 }
 
+/* STACK SAFE */
 void
 dis_push_data(size_t bytes, void *data)
 {
@@ -66,6 +82,7 @@ dis_push_data(size_t bytes, void *data)
     dstream.write_ptr += bytes;
 }
 
+/* STACK SAFE */
 void
 dis_push_instruction(struct draw_instruction_t instr)
 {
@@ -84,6 +101,14 @@ dis_fetch_data(size_t bytes, void *data)
     return read_count;
 }
 
+void*
+dis_read_data(size_t bytes)
+{
+    void *result = dstream.memory + dstream.read_ptr;
+    dstream.read_ptr += bytes;
+    return result;
+}
+
 void
 dis_switch_program(int program)
 {
@@ -91,7 +116,11 @@ dis_switch_program(int program)
 
     if (last && last->type == DI_SWITCH_PROGRAM)
     {
-        last->program = program;
+        if (last->program != program)
+        {
+            last->program = program;
+            dstream.next_index = 0;
+        }
         return;
     }
     else
@@ -100,6 +129,7 @@ dis_switch_program(int program)
 
         instr.type = DI_SWITCH_PROGRAM;
         instr.program = program;
+        dstream.next_index = 0;
         dis_push_instruction(instr);
     }
 }
@@ -108,6 +138,7 @@ void
 dis_push_vertices(size_t count, size_t vertex_size, void *vertex_data)
 {
     struct draw_instruction_t *last = dis_last_pushed_instruction();
+    dstream.next_index += count;
 
     if (last && (last->type == DI_PUSH_VERTICES))
     {
@@ -207,164 +238,314 @@ dis_fetch_instruction()
     return result;
 }
 
-struct draw_cmd*
-draw_cmd_new(int program)
-{
-    struct draw_cmd *result = calloc(1, sizeof(struct draw_cmd));
-    result->program = program;
-    result->vertices = vector_new(programs[program]->vertex->vertices->item_size);
-    result->indices = vector_new(programs[program]->vertex->indices->item_size);
-    return result;
-}
-
-void
-draw_cmd_delete(struct draw_cmd *cmd)
-{
-    vector_delete(cmd->vertices);
-    vector_delete(cmd->indices);
-    free(cmd);
-}
 
 void
 ds_init()
 {
     memset(&ds, 0, sizeof(struct draw_state));
-    ds.commands = vector_new(sizeof(struct draw_cmd));
-    vector_push_back(ds.commands, calloc(1, sizeof(struct draw_cmd)));
-    ds.current_command = 0;
+    dis_init();
+    ds.program = -1;
+    mat4_set_identity(&ds.projection);
+    mat4_set_identity(&ds.view);
+    mat4_set_identity(&ds.model);
+    mat4_set_orthographic(&ds.projection, 0, xoverlay_library.width, 0, xoverlay_library.height, -1, 1);
 }
 
 void
 ds_destroy()
 {
-    for (int i = 0; i < ds.commands->size; ++i)
+    dis_destroy();
+}
+
+void
+ds_mark_dirty()
+{
+    ds.dirty = 1;
+}
+
+void
+ds_render_if_needed()
+{
+    if (ds.dirty && ds.program >= 0)
     {
-        struct draw_cmd *cmd = vector_get(ds.commands, i);
-        draw_cmd_delete(cmd);
+        printf("calling renderer...\n");
+        programs[ds.program].render();
     }
-    vector_delete(ds.commands);
+    ds.dirty = 0;
 }
 
 void
-ds_alloc_next_command(int program)
+ds_pre_render()
 {
-    struct draw_cmd *result = calloc(1, sizeof(struct draw_cmd));
-    result->program = program;
-    vector_push_back(ds.commands, result);
-    ds.current_command++;
+    glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_TEXTURE_BIT | GL_COLOR_BUFFER_BIT);
+
+    glEnable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
+    glDisable(GL_ALPHA_TEST);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_STENCIL_TEST);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glPushClientAttrib(GL_CLIENT_ALL_ATTRIB_BITS);
+
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_EDGE_FLAG_ARRAY);
+    glDisableClientState(GL_FOG_COORD_ARRAY);
+    glDisableClientState(GL_SECONDARY_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_INDEX_ARRAY);
 }
 
 void
-ds_next_frame()
+ds_post_render()
 {
-    for (int i = 0; i < ds.commands->size; ++i)
+    glPopClientAttrib();
+    glPopAttrib();
+}
+
+void
+ds_render_next_frame()
+{
+    glClear(GL_COLOR_BUFFER_BIT);
+    dis_finish();
+    ds.program = -1;
+    struct draw_instruction_t *instr;
+
+    instr = dis_fetch_instruction();
+
+    while (instr)
     {
-        struct draw_cmd *cmd = vector_get(ds.commands, i);
-        draw_cmd_delete(cmd);
-    }
-    vector_resize(ds.commands, 1);
-    memset(vector_get(ds.commands, 0), 0, sizeof(struct draw_cmd));
-    ds.current_command = 0;
-}
-
-void
-ds_render()
-{
-
-}
-
-void
-ds_render()
-{
-    for (int i = 0; i < vector_size(state->commands); ++i)
-    {
-        struct draw_cmd *current = vector_get(state->commands, i);
-        if (current->texture != state->texture)
+        printf("instruction: %d data: %d\n", instr->type, instr->program);
+        switch (instr->type)
         {
-            glBindTexture(GL_TEXTURE_2D, current->texture);
-            state->texture = current->texture;
+            case DI_SWITCH_PROGRAM:
+                if (ds.program != instr->program)
+                {
+                    ds_render_if_needed();
+                    if (ds.program >= 0 && programs[ds.program].unload)
+                        programs[ds.program].unload();
+                    ds.program = instr->program;
+                    if (programs[ds.program].load)
+                        programs[ds.program].load();
+                }
+                break;
+            case DI_PUSH_VERTICES:
+                ds_mark_dirty();
+                printf("program: %d\n", ds.program);
+                vertex_buffer_push_back_vertices(programs[ds.program].vertex, dis_read_data(instr->count * programs[ds.program].vertex_size), instr->count);
+                break;
+            case DI_PUSH_INDICES:
+                ds_mark_dirty();
+                vertex_buffer_push_back_indices(programs[ds.program].vertex, dis_read_data(instr->count * sizeof(GLuint)), instr->count);
+                break;
+            case DI_PROGRAM_SWITCH_TEXTURE:
+                ds_bind_texture(instr->texture);
+                break;
+            case DI_PROGRAM_SWITCH_FONT:
+                program_freetype_switch_font(instr->font);
+                break;
+            case DI_INVALID_INSTRUCTION:
+            case DI_TERMINATE:
+            default:
+                break;
+
         }
-        if (current->program != state->program)
-        {
-            if (state->program >= 0)
-            {
-                programs[state->program].unload();
-            }
-            if (programs[current->program].shader != state->shader)
-            {
-                glUseProgram(programs[current->program].shader);
-                state->shader = programs[current->program].shader;
-            }
-            programs[current->program].load();
-        }
-        programs[current->program].render(current);
+        instr = dis_fetch_instruction();
     }
-    if (state->program >= 0)
-        programs[state->program].unload();
-    state->program = -1;
-}
-
-void
-ds_prepare_command(int program)
-{
-    int should_alloc_command = 0;
-    struct draw_cmd *current = vector_get(ds.commands, ds.current_command);
-
-    if (current == NULL)
-        should_alloc_command = 1;
-    else if (program != current->program)
-        should_alloc_command = 1;
-    else if (programs[program].check && !programs[program].check(current))
-        should_alloc_command = 1;
-
-    if (should_alloc_command)
+    ds_render_if_needed();
+    if (ds.program >= 0 && programs[ds.program].unload)
     {
-        ds_alloc_next_command();
+        programs[ds.program].unload();
+        ds.program = -1;
+    }
+    dis_reset();
+    glFlush();
+    printf("SwapBuffers\n");
+    glXSwapBuffers(xoverlay_library.display, xoverlay_library.window);
+}
+
+void
+ds_bind_texture(GLuint texture)
+{
+    if (ds.texture != texture)
+    {
+        ds.texture = texture;
+        glBindTexture(GL_TEXTURE_2D, texture);
     }
 }
 
 void
-draw_line(vec2 xy, vec2 delta, vec4 color)
+ds_use_shader(GLuint shader)
 {
-    ds_prepare_command(PROGRAM_TRIANGLES_PLAIN);
-    vertex_buffer_delete();
+    if (ds.shader != shader)
+    {
+        ds.shader = shader;
+        glUseProgram(shader);
+    }
+}
+
+void
+ds_prepare_program(int program)
+{
+    printf("current program: %d, new: %d\n", ds.program, program);
+    if (program != ds.program)
+    {
+        printf("switching to program %d from %d\n", program, ds.program);
+        dis_switch_program(program);
+        ds.program = program;
+    }
+}
+
+void
+draw_line(vec2 xy, vec2 delta, vec4 color, float thickness)
+{
+    ds_prepare_program(PROGRAM_TRIANGLES_PLAIN);
+    GLuint idx = dstream.next_index;
+
+    struct vertex_v2fc4f vertices[0];
+    /* A C => ABC, CDB
+     * B D
+     */
+    GLuint indices[6] = { idx, idx + 1, idx + 2, idx + 2, idx + 3, idx + 1 };
+
+    vec2 normal = { .x = -delta.y, .y = delta.x };
+    vec2 end = (vec2){ xy.x + delta.x, xy.y + delta.y };
+    float length = sqrtf(normal.x * normal.x + normal.y * normal.y);
+    if (length == 0)
+        return;
+    length /= thickness;
+    normal.x /= length;
+    normal.y /= length;
+
+    vertices[0].pos.x = xy.x - normal.x;
+    vertices[0].pos.y = xy.y - normal.y;
+    vertices[0].color = color;
+
+    vertices[1].pos.x = xy.x + normal.x;
+    vertices[1].pos.y = xy.y + normal.y;
+    vertices[1].color = color;
+
+    vertices[2].pos.x = end.x - normal.x;
+    vertices[2].pos.y = end.y - normal.y;
+    vertices[2].color = color;
+
+    vertices[3].pos.x = end.x + normal.x;
+    vertices[3].pos.y = end.y + normal.y;
+    vertices[3].color = color;
+
+    dis_push_vertices(4, sizeof(struct vertex_v2fc4f), vertices);
+    dis_push_indices(6, indices);
 }
 
 void
 draw_rect(vec2 xy, vec2 hw, vec4 color)
 {
-    ds_prepare_command(PROGRAM_TRIANGLES_PLAIN);
+    ds_prepare_program(PROGRAM_TRIANGLES_PLAIN);
+    GLuint idx = dstream.next_index;
 
+    struct vertex_v2fc4f vertices[4];
+    /* A C => ABC, CDB
+     * B D
+     */
+    GLuint indices[6] = { idx, idx + 1, idx + 2, idx + 2, idx + 3, idx + 1 };
+
+    vertices[0].pos.x = xy.x;
+    vertices[0].pos.y = xy.y;
+    vertices[0].color = color;
+
+    vertices[1].pos.x = xy.x;
+    vertices[1].pos.y = xy.y + hw.y;
+    vertices[1].color = color;
+
+    vertices[2].pos.x = xy.x + hw.x;
+    vertices[2].pos.y = xy.y + hw.y;
+    vertices[2].color = color;
+
+    vertices[3].pos.x = xy.x + hw.x;
+    vertices[3].pos.y = xy.y;
+    vertices[3].color = color;
+
+    dis_push_vertices(4, sizeof(struct vertex_v2fc4f), vertices);
+    dis_push_indices(6, indices);
 }
 
 void
-draw_rect_outline(vec2 xy, vec2 hw, vec4 color)
+draw_rect_outline(vec2 xy, vec2 hw, vec4 color, float thickness)
 {
-    ds_prepare_command(PROGRAM_TRIANGLES_PLAIN);
+    vec2 point = xy;
+    vec2 delta = { hw.x, 0 };
+    draw_line(point, delta, color, thickness);
+    point.x += delta.x;
+    delta.x = 0;
+    delta.y = hw.y;
+    draw_line(point, delta, color, thickness);
+    point.y += delta.y;
+    delta.x = -hw.x;
+    delta.y = 0;
+    draw_line(point, delta, color, thickness);
+    point.x += delta.x;
+    delta.x = 0;
+    delta.y = -hw.y;
+    draw_line(point, delta, color, thickness);
 }
 
 void
 draw_rect_textured(vec2 xy, vec2 hw, vec4 color, int texture, vec2 uv, vec2 st)
 {
-    ds_prepare_command(PROGRAM_TRIANGLES_TEXTURED);
+    ds_prepare_program(PROGRAM_TRIANGLES_TEXTURED);
+    GLuint idx = dstream.next_index;
+
+    struct vertex_v2ft2fc4f vertices[4];
+    /* A C => ABC, CDB
+     * B D
+     */
+    GLuint indices[6] = { idx, idx + 1, idx + 2, idx + 2, idx + 3, idx + 1 };
+
+    vertices[0].pos.x = xy.x;
+    vertices[0].pos.y = xy.y;
+    vertices[0].uv = uv;
+    vertices[0].color = color;
+
+    vertices[1].pos.x = xy.x;
+    vertices[1].pos.y = xy.y + hw.y;
+    vertices[1].uv = (vec2){ uv.x, uv.y + st.y };
+    vertices[1].color = color;
+
+    vertices[2].pos.x = xy.x + hw.x;
+    vertices[2].pos.y = xy.y + hw.y;
+    vertices[1].uv = (vec2){ uv.x + st.x, uv.y + st.y };
+    vertices[2].color = color;
+
+    vertices[3].pos.x = xy.x + hw.x;
+    vertices[3].pos.y = xy.y;
+    vertices[1].uv = (vec2){ uv.x + st.x, uv.y };
+    vertices[3].color = color;
+
+    dis_push_vertices(4, sizeof(struct vertex_v2ft2fc4f), vertices);
+    dis_push_indices(6, indices);
 }
 
 void
 draw_string(vec2 xy, const char *string, texture_font_t *font, vec4 color)
 {
-    ds_prepare_command(PROGRAM_FREETYPE);
+    ds_prepare_program(PROGRAM_FREETYPE);
 }
 
 void
 draw_string_outline(vec2 xy, const char *string, texture_font_t *font, vec4 color)
 {
-    ds_prepare_command(PROGRAM_FREETYPE);
+    ds_prepare_program(PROGRAM_FREETYPE);
 }
 
 void
 draw_string_with_outline(vec2 xy, const char *string, texture_font_t *font, vec4 color, vec4 outline_color)
 {
-    ds_prepare_command(PROGRAM_FREETYPE);
+    ds_prepare_program(PROGRAM_FREETYPE);
 }
 
 void
