@@ -70,12 +70,6 @@ typedef struct xoverlay_vec4_t
     };
 } xoverlay_vec4_t, xoverlay_rgba_t;
 
-typedef struct xoverlay_vec2_t
-{
-    float x;
-    float y;
-} xoverlay_vec2_t;
-
 int  xoverlay_init();
 void xoverlay_destroy();
 
@@ -87,22 +81,22 @@ void xoverlay_install_mouse_callback(xoverlay_callback_mousemove callback);
 xoverlay_rgba_t xoverlay_rgba(int r, int g, int b, int a);
 
 void
-xoverlay_draw_line(xoverlay_vec2_t xy, xoverlay_vec2_t delta, xoverlay_rgba_t color, float thickness);
+xoverlay_draw_line(float x, float y, float dx, float dy, xoverlay_rgba_t color, float thickness);
 
 void
-xoverlay_draw_rect(xoverlay_vec2_t xy, xoverlay_vec2_t hw, xoverlay_rgba_t color);
+xoverlay_draw_rect(float x, float y, float w, float h, xoverlay_rgba_t color);
 
 void
-xoverlay_draw_rect_outline(xoverlay_vec2_t xy, xoverlay_vec2_t hw, xoverlay_rgba_t color, float thickness);
+xoverlay_draw_rect_outline(float x, float y, float w, float h, xoverlay_rgba_t color, float thickness);
 
 void
-xoverlay_draw_rect_textured(xoverlay_vec2_t xy, xoverlay_vec2_t hw, xoverlay_rgba_t color, xoverlay_texture_handle texture, xoverlay_vec2_t t_xy, xoverlay_vec2_t t_hw);
+xoverlay_draw_rect_textured(float x, float y, float w, float h, xoverlay_rgba_t color, xoverlay_texture_handle_t texture, float tx, float ty, float tw, float th);
 
 void
-xoverlay_draw_string(xoverlay_vec2_t xy, const char *string, xoverlay_font_handle_t font, xoverlay_vec4_t color, int *out_x, int *out_y);
+xoverlay_draw_string(float x, float y, const char *string, xoverlay_font_handle_t font, xoverlay_vec4_t color, float *out_x, float *out_y);
 
 void
-xoverlay_draw_string_with_outline(xoverlay_vec2_t xy, const char *string, xoverlay_font_handle_t font, xoverlay_vec4_t color, xoverlay_vec4_t outline_color, float outline_width, int adjust_outline_alpha, int *out_x, int *out_y);
+xoverlay_draw_string_with_outline(float x, float y, const char *string, xoverlay_font_handle_t font, xoverlay_vec4_t color, xoverlay_vec4_t outline_color, float outline_width, int adjust_outline_alpha, float *out_x, float *out_y);
 
 void xoverlay_poll_events();
 void xoverlay_draw_begin();

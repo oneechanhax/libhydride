@@ -5,12 +5,13 @@
  *      Author: nullifiedcat
  */
 
-#include "drawglx.h"
+#include "drawglx_internal.h"
 #include "overlay.h"
 #include "programs.h"
-#include "drawglx_internal.h"
+#include "vertex_structs.h"
 
 #include <GL/gl.h>
+#include <math.h>
 #include <string.h>
 #include <stdio.h>
 #include <X11/extensions/shape.h>
@@ -185,6 +186,228 @@ int xoverlay_glx_create_window()
     program_init_everything();
 
     return 0;
+}
+
+void
+xoverlay_draw_line(float x, float y, float dx, float dy, xoverlay_rgba_t color, float thickness)
+{
+    ds_prepare_program(PROGRAM_TRIANGLES_PLAIN);
+
+    GLuint idx = dstream.next_index;
+    GLuint indices[6] = { idx, idx + 1, idx + 3, idx + 3, idx +2, idx };
+    struct vertex_v2fc4f vertices[4];
+
+    float nx = -dy;
+    float ny = dx;
+
+    float ex = x + dx;
+    float ey = y + dy;
+
+    float length = sqrtf(nx * nx + ny * ny);
+
+    if (length == 0)
+        return;
+
+    length /= thickness;
+    nx /= length;
+    ny /= length;
+
+    vertices[0].pos.x = x - nx;
+    vertices[0].pos.y = y - ny;
+    vertices[0].color = *(vec4*)&color;
+
+    vertices[1].pos.x = x + nx;
+    vertices[1].pos.y = y + ny;
+    vertices[1].color = *(vec4*)&color;
+
+
+    vertices[2].pos.x = ex - nx;
+    vertices[2].pos.y = ey - ny;
+    vertices[2].color = *(vec4*)&color;
+
+
+    vertices[3].pos.x = ex + ny;
+    vertices[3].pos.y = ey + ny;
+    vertices[3].color = *(vec4*)&color;
+
+    dis_push_vertices(4, sizeof(struct vertex_v2fc4f), vertices);
+    dis_push_indices(6, indices);
+}
+
+void
+xoverlay_draw_rect(float x, float y, float w, float h, xoverlay_rgba_t color)
+{
+    ds_prepare_program(PROGRAM_TRIANGLES_PLAIN);
+    GLuint idx = dstream.next_index;
+
+    struct vertex_v2fc4f vertices[4];
+    GLuint indices[6] = { idx, idx + 1, idx + 2, idx + 2, idx + 3, idx };
+
+    vertices[0].pos.x = x;
+    vertices[0].pos.y = y;
+    vertices[0].color = *(vec4*)&color;
+
+    vertices[1].pos.x = x;
+    vertices[1].pos.y = y + h;
+    vertices[1].color = *(vec4*)&color;
+
+    vertices[2].pos.x = x + w;
+    vertices[2].pos.y = y + h;
+    vertices[2].color = *(vec4*)&color;
+
+    vertices[3].pos.x = x + w;
+    vertices[3].pos.y = y;
+    vertices[3].color = *(vec4*)&color;
+
+    dis_push_vertices(4, sizeof(struct vertex_v2fc4f), vertices);
+    dis_push_indices(6, indices);
+}
+
+void
+xoverlay_draw_rect_outline(float x, float y, float w, float h, xoverlay_rgba_t color, float thickness)
+{
+    xoverlay_draw_line(x, y, w, 0, color, thickness);
+    xoverlay_draw_line(x + w, y, 0, h, color, thickness);
+    xoverlay_draw_line(x + w, y + h, -w, 0, color, thickness);
+    xoverlay_draw_line(x, y + h, 0, -h, color, thickness);
+}
+
+void
+xoverlay_draw_rect_textured(float x, float y, float w, float h, xoverlay_rgba_t color, xoverlay_texture_handle_t texture, float tx, float ty, float tw, float th)
+{
+    struct textureapi_texture_t *tex = textureapi_get(texture);
+
+    if (tex == NULL)
+        return;
+
+    ds_prepare_program(PROGRAM_TRIANGLES_TEXTURED);
+    ds_prepare_texture_handle(texture);
+
+    GLuint idx = dstream.next_index;
+
+    struct vertex_v2ft2fc4f vertices[4];
+    GLuint indices[6] = { idx, idx + 1, idx + 2, idx + 2, idx + 3, idx };
+
+    float s0 = tx / tex->width;
+    float s1 = (tx + tw) / tex->width;
+    float t0 = ty / tex->height;
+    float t1 = (ty + th) / tex->height;
+
+    vertices[0].pos.x = x;
+    vertices[0].pos.y = y;
+    vertices[0].uv.x = s0;
+    vertices[0].uv.y = t1;
+    vertices[0].color = *(vec4*)&color;
+
+    vertices[1].pos.x = x;
+    vertices[1].pos.y = y + h;
+    vertices[1].uv.x = s0;
+    vertices[1].uv.y = t0;
+    vertices[1].color = *(vec4*)&color;
+
+    vertices[2].pos.x = x + w;
+    vertices[2].pos.y = y + h;
+    vertices[2].uv.x = s1;
+    vertices[2].uv.y = t0;
+    vertices[2].color = *(vec4*)&color;
+
+    vertices[3].pos.x = x + w;
+    vertices[3].pos.y = y;
+    vertices[3].uv.x = s1;
+    vertices[3].uv.y = t1;
+    vertices[3].color = *(vec4*)&color;
+
+    dis_push_vertices(4, sizeof(struct vertex_v2ft2fc4f), vertices);
+    dis_push_indices(6, indices);
+}
+
+void
+draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, vec4 color, float *out_x, float *out_y)
+{
+    float pen_x = x;
+    float pen_y = y;
+    float size_y = 0;
+
+    texture_font_load_glyphs(fnt, string);
+
+    for (size_t i = 0; i < strlen(string); ++i)
+    {
+        texture_glyph_t *glyph = texture_font_find_glyph(fnt, &string[i]);
+        if (glyph == NULL)
+        {
+            continue;
+        }
+        if (i > 0)
+        {
+            x += texture_glyph_get_kerning(glyph, &string[i - 1]);
+        }
+
+        float x0 = (pen_x + glyph->offset_x);
+        float y0 = (pen_y - glyph->offset_y);
+        float x1 = (x0 + glyph->width);
+        float y1 = (y0 + glyph->height);
+        float s0 = glyph->s0;
+        float t0 = glyph->t0;
+        float s1 = glyph->s1;
+        float t1 = glyph->t1;
+
+        GLuint idx = dstream.next_index;
+        GLuint indices[] = { idx, idx + 1, idx + 2,
+                             idx + 2, idx + 3, idx };
+        struct vertex_v2ft2fc4f vertices[] = {
+                { (vec2){ x0, y0 }, (vec2){ s0, t0 }, color },
+                { (vec2){ x0, y1 }, (vec2){ s0, t1 }, color },
+                { (vec2){ x1, y1 }, (vec2){ s1, t1 }, color },
+                { (vec2){ x1, y0 }, (vec2){ s1, t0 }, color }
+        };
+
+        dis_push_indices(6, indices);
+        dis_push_vertices(4, sizeof(struct vertex_v2ft2fc4f), vertices);
+
+        pen_x += glyph->advance_x;
+        if (glyph->height > size_y)
+            size_y = glyph->height;
+    }
+    if (out_x)
+        *out_x = pen_x - x;
+    if (out_y)
+        *out_y = size_y;
+}
+void
+xoverlay_draw_string(float x, float y, const char *string, xoverlay_font_handle_t font, xoverlay_vec4_t color, float *out_x, float *out_y)
+{
+    ds_prepare_program(PROGRAM_FREETYPE);
+    ds_prepare_font(font);
+
+    texture_font_t *fnt = fontapi_get(font);
+
+    if (fnt == NULL)
+        return;
+
+    fnt->rendermode = RENDER_NORMAL;
+    fnt->outline_thickness = 0.0f;
+
+    draw_string_internal(x, y, string, fnt, *(vec4*)&color, out_x, out_y);
+}
+
+void
+xoverlay_draw_string_with_outline(float x, float y, const char *string, xoverlay_font_handle_t font, xoverlay_vec4_t color, xoverlay_vec4_t outline_color, float outline_width, int adjust_outline_alpha, float *out_x, float *out_y)
+{
+    ds_prepare_program(PROGRAM_FREETYPE);
+    ds_prepare_font(font);
+
+    if (adjust_outline_alpha)
+        outline_color.a = color.a;
+
+    texture_font_t *fnt = fontapi_get(font);
+
+    fnt->rendermode = RENDER_OUTLINE_POSITIVE;
+    fnt->outline_thickness = outline_width;
+    draw_string_internal(x, y, string, fnt, *(vec4*)&outline_color, NULL, NULL);
+
+    fnt->rendermode = RENDER_NORMAL;
+    fnt->outline_thickness = 0.0f;
+    draw_string_internal(x, y, string, fnt, *(vec4*)&color, out_x, out_y);
 }
 
 int xoverlay_glx_destroy()

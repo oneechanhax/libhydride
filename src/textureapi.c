@@ -96,7 +96,7 @@ textureapi_load_png_rgba(const char *name, struct textureapi_texture_t *out)
 
 
 void
-textureapi_bind(xoverlay_texture_handle handle)
+textureapi_bind(xoverlay_texture_handle_t handle)
 {
     struct textureapi_texture_t *texture = textureapi_get(handle);
     if (texture == NULL || texture->init == 0)
@@ -117,7 +117,7 @@ textureapi_bind(xoverlay_texture_handle handle)
     ds_bind_texture(texture->texture_id);
 }
 
-xoverlay_texture_handle
+xoverlay_texture_handle_t
 xoverlay_texture_load_png_rgba(const char *path)
 {
     struct textureapi_texture_t result;
@@ -132,7 +132,7 @@ xoverlay_texture_load_png_rgba(const char *path)
 
 
 void
-xoverlay_texture_get_size(xoverlay_texture_handle handle, int *width, int *height)
+xoverlay_texture_get_size(xoverlay_texture_handle_t handle, int *width, int *height)
 {
     struct textureapi_texture_t *tx = textureapi_get(handle);
     if (tx == NULL)
@@ -144,7 +144,7 @@ xoverlay_texture_get_size(xoverlay_texture_handle handle, int *width, int *heigh
 }
 
 struct textureapi_texture_t *
-textureapi_get(xoverlay_texture_handle handle)
+textureapi_get(xoverlay_texture_handle_t handle)
 {
     if (handle == 0 || handle >= XOVERLAY_TEXTURE_COUNT)
         return NULL;
@@ -166,10 +166,10 @@ textureapi_destroy()
 
 }
 
-xoverlay_texture_handle
+xoverlay_texture_handle_t
 textureapi_add_texture(struct textureapi_texture_t texture)
 {
-    for (xoverlay_texture_handle i = 0; i < XOVERLAY_TEXTURE_COUNT; ++i)
+    for (xoverlay_texture_handle_t i = 0; i < XOVERLAY_TEXTURE_COUNT; ++i)
     {
         if (loaded_textures[i].init == 0)
         {
@@ -182,7 +182,7 @@ textureapi_add_texture(struct textureapi_texture_t texture)
 }
 
 void
-xoverlay_texture_unload(xoverlay_texture_handle handle)
+xoverlay_texture_unload(xoverlay_texture_handle_t handle)
 {
     // TODO
 }

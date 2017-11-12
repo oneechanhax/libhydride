@@ -45,7 +45,7 @@ struct draw_instruction_t
         /* DI_PROGRAM_SWITCH_FONT */
         xoverlay_font_handle_t font;
         /* */
-        xoverlay_texture_handle thandle;
+        xoverlay_texture_handle_t thandle;
     };
 };
 
@@ -101,7 +101,7 @@ void
 dis_program_switch_texture(GLuint texture);
 
 void
-dis_textureapi_switch_texture(xoverlay_texture_handle texture);
+dis_textureapi_switch_texture(xoverlay_texture_handle_t texture);
 
 void
 dis_program_switch_font(xoverlay_font_handle_t font);
@@ -121,7 +121,7 @@ struct draw_state
 
     GLuint                 texture;
     xoverlay_font_handle_t font;
-    xoverlay_texture_handle thandle;
+    xoverlay_texture_handle_t thandle;
 
     GLuint shader;
 };
@@ -155,7 +155,7 @@ ds_render_next_frame();
 /* To be called by draw functions */
 
 void
-ds_prepare_texture_handle(xoverlay_texture_handle handle);
+ds_prepare_texture_handle(xoverlay_texture_handle_t handle);
 
 void
 ds_prepare_texture(GLuint texture);
@@ -173,26 +173,3 @@ ds_use_shader(GLuint shader);
 
 void
 ds_use_font(xoverlay_font_handle_t font);
-
-/* Primitive Internal Drawing API */
-
-void
-draw_line(vec2 xy, vec2 delta, vec4 color, float thickness);
-
-void
-draw_rect(vec2 xy, vec2 hw, vec4 color);
-
-void
-draw_rect_outline(vec2 xy, vec2 hw, vec4 color, float thickness);
-
-void
-draw_rect_textured(vec2 xy, vec2 hw, vec4 color, xoverlay_texture_handle texture, vec2 t_xy, vec2 t_hw);
-
-void
-draw_string_internal(vec2 xy, const char *string, xoverlay_font_handle_t font, vec4 color, int *out_x, int *out_y);
-
-void
-draw_string(vec2 xy, const char *string, xoverlay_font_handle_t font, vec4 color, int *out_x, int *out_y);
-
-void
-draw_string_with_outline(vec2 xy, const char *string, xoverlay_font_handle_t font, vec4 color, vec4 outline_color, float outline_width, int adjust_outline_alpha, int *out_x, int *out_y);

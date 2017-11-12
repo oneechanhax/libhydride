@@ -34,10 +34,10 @@ int
 textureapi_load_png_rgba(const char *name, struct textureapi_texture_t *out);
 
 struct textureapi_texture_t *
-textureapi_get(xoverlay_texture_handle handle);
+textureapi_get(xoverlay_texture_handle_t handle);
 
 void
-textureapi_bind(xoverlay_texture_handle handle);
+textureapi_bind(xoverlay_texture_handle_t handle);
 
 int
 textureapi_init();
@@ -45,7 +45,7 @@ textureapi_init();
 void
 textureapi_destroy();
 
-xoverlay_texture_handle
+xoverlay_texture_handle_t
 textureapi_add_texture(struct textureapi_texture_t font);
 
 
