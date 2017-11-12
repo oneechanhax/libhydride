@@ -49,6 +49,7 @@ int xoverlay_init()
     fontapi_init();
 
     xoverlay_library.init = 1;
+
     return 0;
 }
 
@@ -115,6 +116,26 @@ void xoverlay_install_mouse_callback(xoverlay_callback_mousemove callback)
 {
     xoverlay_library.cb_draw = callback;
 }*/
+
+void
+xoverlay_show()
+{
+    if (xoverlay_library.mapped == 1)
+        return;
+
+    XMapWindow(xoverlay_library.display, xoverlay_library.window);
+    xoverlay_library.mapped = 1;
+}
+
+void
+xoverlay_hide()
+{
+    if (xoverlay_library.mapped == 0)
+        return;
+
+    XUnmapWindow(xoverlay_library.display, xoverlay_library.window);
+    xoverlay_library.mapped = 0;
+}
 
 void xoverlay_poll_events()
 {

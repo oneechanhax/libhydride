@@ -78,10 +78,14 @@ int poll_low_event(int fd, struct input_event *event)
 int poll_event(int device, struct input_event_parsed *event)
 {
     struct input_event ie;
-    if (!poll_low_event(*input_devices[device], &ie))
+    int failcount = 0;
+    while (failcount++ < 2)
     {
-        return 0;
+        if (poll_low_event(*input_devices[device], &ie))
+            break;
     }
+    if (failcount >= 2)
+        return 0;
     switch (ie.type)
     {
     case EV_KEY:

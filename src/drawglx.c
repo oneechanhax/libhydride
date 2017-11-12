@@ -136,7 +136,8 @@ int xoverlay_glx_create_window()
 
     XFree(info);
     XStoreName(xoverlay_library.display, xoverlay_library.window, "OverlayWindow");
-    XMapWindow(xoverlay_library.display, xoverlay_library.window);
+
+    xoverlay_show();
 
     const char *extensions = glXQueryExtensionsString(xoverlay_library.display, xoverlay_library.screen);
     glXCreateContextAttribsARBfn glXCreateContextAttribsARB = (glXCreateContextAttribsARBfn)
@@ -189,9 +190,31 @@ int xoverlay_glx_create_window()
 }
 
 void
+xoverlay_draw_circle(float x, float y, float radius, xoverlay_rgba_t color, float thickness, int steps)
+{
+    float px = 0;
+    float py = 0;
+    for (int i = 0; i < steps; i++) {
+            float ang = 2 * M_PI * ((float)i / steps);
+            if (!i)
+                ang = 2 * M_PI * ((float)(steps - 1) / steps);
+            if (i)
+                xoverlay_draw_line(px, py, x - px + radius * cos(ang), y - py + radius * sin(ang), color, thickness);
+            px = x + radius * cos(ang);
+            py = y + radius * sin(ang);
+    }
+}
+
+void
 xoverlay_draw_line(float x, float y, float dx, float dy, xoverlay_rgba_t color, float thickness)
 {
+    if (xoverlay_library.mapped == 0 || xoverlay_library.drawing == 0)
+        return;
+
     ds_prepare_program(PROGRAM_TRIANGLES_PLAIN);
+
+    x += 0.5f;
+    y += 0.5f;
 
     GLuint idx = dstream.next_index;
     GLuint indices[6] = { idx, idx + 1, idx + 3, idx + 3, idx +2, idx };
@@ -226,7 +249,7 @@ xoverlay_draw_line(float x, float y, float dx, float dy, xoverlay_rgba_t color, 
     vertices[2].color = *(vec4*)&color;
 
 
-    vertices[3].pos.x = ex + ny;
+    vertices[3].pos.x = ex + nx;
     vertices[3].pos.y = ey + ny;
     vertices[3].color = *(vec4*)&color;
 
@@ -237,8 +260,14 @@ xoverlay_draw_line(float x, float y, float dx, float dy, xoverlay_rgba_t color, 
 void
 xoverlay_draw_rect(float x, float y, float w, float h, xoverlay_rgba_t color)
 {
+    if (xoverlay_library.mapped == 0 || xoverlay_library.drawing == 0)
+        return;
+
     ds_prepare_program(PROGRAM_TRIANGLES_PLAIN);
     GLuint idx = dstream.next_index;
+
+    x += 0.5f;
+    y += 0.5f;
 
     struct vertex_v2fc4f vertices[4];
     GLuint indices[6] = { idx, idx + 1, idx + 2, idx + 2, idx + 3, idx };
@@ -266,6 +295,9 @@ xoverlay_draw_rect(float x, float y, float w, float h, xoverlay_rgba_t color)
 void
 xoverlay_draw_rect_outline(float x, float y, float w, float h, xoverlay_rgba_t color, float thickness)
 {
+    if (xoverlay_library.mapped == 0 || xoverlay_library.drawing == 0)
+        return;
+
     xoverlay_draw_line(x, y, w, 0, color, thickness);
     xoverlay_draw_line(x + w, y, 0, h, color, thickness);
     xoverlay_draw_line(x + w, y + h, -w, 0, color, thickness);
@@ -275,6 +307,9 @@ xoverlay_draw_rect_outline(float x, float y, float w, float h, xoverlay_rgba_t c
 void
 xoverlay_draw_rect_textured(float x, float y, float w, float h, xoverlay_rgba_t color, xoverlay_texture_handle_t texture, float tx, float ty, float tw, float th)
 {
+    if (xoverlay_library.mapped == 0 || xoverlay_library.drawing == 0)
+        return;
+
     struct textureapi_texture_t *tex = textureapi_get(texture);
 
     if (tex == NULL)
@@ -282,6 +317,9 @@ xoverlay_draw_rect_textured(float x, float y, float w, float h, xoverlay_rgba_t 
 
     ds_prepare_program(PROGRAM_TRIANGLES_TEXTURED);
     ds_prepare_texture_handle(texture);
+
+    x += 0.5f;
+    y += 0.5f;
 
     GLuint idx = dstream.next_index;
 
@@ -324,6 +362,7 @@ xoverlay_draw_rect_textured(float x, float y, float w, float h, xoverlay_rgba_t 
 void
 draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, vec4 color, float *out_x, float *out_y)
 {
+
     float pen_x = x;
     float pen_y = y;
     float size_y = 0;
@@ -376,6 +415,9 @@ draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, 
 void
 xoverlay_draw_string(float x, float y, const char *string, xoverlay_font_handle_t font, xoverlay_vec4_t color, float *out_x, float *out_y)
 {
+    if (xoverlay_library.mapped == 0 || xoverlay_library.drawing == 0)
+        return;
+
     ds_prepare_program(PROGRAM_FREETYPE);
     ds_prepare_font(font);
 
@@ -393,6 +435,9 @@ xoverlay_draw_string(float x, float y, const char *string, xoverlay_font_handle_
 void
 xoverlay_draw_string_with_outline(float x, float y, const char *string, xoverlay_font_handle_t font, xoverlay_vec4_t color, xoverlay_vec4_t outline_color, float outline_width, int adjust_outline_alpha, float *out_x, float *out_y)
 {
+    if (xoverlay_library.mapped == 0 || xoverlay_library.drawing == 0)
+        return;
+
     ds_prepare_program(PROGRAM_FREETYPE);
     ds_prepare_font(font);
 
