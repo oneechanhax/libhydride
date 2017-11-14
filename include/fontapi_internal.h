@@ -14,14 +14,9 @@
 struct fontapi_font_t
 {
     int init;
-    int loaded;
-    int error;
 
     texture_font_t  *font;
     texture_atlas_t *atlas;
-
-    char path[256];
-    float size;
 };
 
 texture_font_t*

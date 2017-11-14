@@ -12,6 +12,8 @@
 
 FILE *log_file = 0;
 
+#if DEBUG
+
 void
 log_write(const char *format, ...)
 {
@@ -34,3 +36,4 @@ log_write(const char *format, ...)
     va_end(args);
 }
 
+#endif

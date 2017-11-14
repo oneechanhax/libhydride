@@ -381,7 +381,14 @@ draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, 
 
     texture_font_load_glyphs(fnt, string);
 
-    for (size_t i = 0; i < strlen(string); ++i)
+    int len = strlen(string);
+    if (len == 0)
+        return;
+
+    GLuint indices[6 * len];
+    struct vertex_v2ft2fc4f vertices[4 * len];
+
+    for (size_t i = 0; i < len; ++i)
     {
         texture_glyph_t *glyph = texture_font_find_glyph(fnt, &string[i]);
         if (glyph == NULL)
@@ -402,23 +409,27 @@ draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, 
         float s1 = glyph->s1;
         float t1 = glyph->t1;
 
-        GLuint idx = dstream.next_index;
-        GLuint indices[] = { idx, idx + 1, idx + 2,
-                             idx + 2, idx + 3, idx };
-        struct vertex_v2ft2fc4f vertices[] = {
-                { (vec2){ x0, y0 }, (vec2){ s0, t0 }, color },
-                { (vec2){ x0, y1 }, (vec2){ s0, t1 }, color },
-                { (vec2){ x1, y1 }, (vec2){ s1, t1 }, color },
-                { (vec2){ x1, y0 }, (vec2){ s1, t0 }, color }
-        };
+        GLuint idx = dstream.next_index + i * 4;
+        indices[i * 6 + 0] = idx;
+        indices[i * 6 + 1] = idx + 1;
+        indices[i * 6 + 2] = idx + 2;
+        indices[i * 6 + 3] = idx + 2;
+        indices[i * 6 + 4] = idx + 3;
+        indices[i * 6 + 5] = idx;
 
-        dis_push_indices(6, indices);
-        dis_push_vertices(4, sizeof(struct vertex_v2ft2fc4f), vertices);
+        vertices[i * 4 + 0] = (struct vertex_v2ft2fc4f){ (vec2){ x0, y0 }, (vec2){ s0, t0 }, color };
+        vertices[i * 4 + 1] = (struct vertex_v2ft2fc4f){ (vec2){ x0, y1 }, (vec2){ s0, t1 }, color };
+        vertices[i * 4 + 2] = (struct vertex_v2ft2fc4f){ (vec2){ x1, y1 }, (vec2){ s1, t1 }, color };
+        vertices[i * 4 + 3] = (struct vertex_v2ft2fc4f){ (vec2){ x1, y0 }, (vec2){ s1, t0 }, color };
 
         pen_x += glyph->advance_x;
         if (glyph->height > size_y)
             size_y = glyph->height;
     }
+
+    dis_push_indices(6 * len, indices);
+    dis_push_vertices(4 * len, sizeof(struct vertex_v2ft2fc4f), vertices);
+
     if (out_x)
         *out_x = pen_x - x;
     if (out_y)
@@ -437,6 +448,7 @@ xoverlay_draw_string(float x, float y, const char *string, xoverlay_font_handle_
     if (fnt == NULL)
     {
         log_write("xoverlay_draw_string: INVALID FONT HANDLE %u\n", font);
+        return;
     }
 
     fnt->rendermode = RENDER_NORMAL;
@@ -459,7 +471,10 @@ xoverlay_draw_string_with_outline(float x, float y, const char *string, xoverlay
 
     texture_font_t *fnt = fontapi_get(font);
     if (fnt == NULL)
+    {
+        log_write("xoverlay_draw_string: INVALID FONT HANDLE %u\n", font);
         return;
+    }
 
     fnt->rendermode = RENDER_OUTLINE_POSITIVE;
     fnt->outline_thickness = outline_width;
