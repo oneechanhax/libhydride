@@ -19,7 +19,6 @@ DECL_PROGRAM_INIT(freetype)
 
 DECL_PROGRAM_LOAD(freetype)
 {
-    vertex_buffer_clear(programs[PROGRAM_FREETYPE].vertex);
     ds_use_shader(programs[PROGRAM_FREETYPE].shader);
     texture_font_t *fnt = fontapi_get(ds.font);
     if (fnt == NULL)

@@ -336,15 +336,25 @@ ds_post_render()
 }
 
 void
-ds_render_next_frame()
+ds_start_next_frame()
 {
-    ds_pre_render();
-    dis_finish();
     ds.program = -1;
     ds.thandle = 0;
     ds.font = 0;
     ds.texture = 0;
     ds.shader = 0;
+
+    for (int i = 0; i < PROGRAM_COUNT; ++i)
+    {
+        vertex_buffer_clear(programs[i].vertex);
+    }
+}
+
+void
+ds_render_next_frame()
+{
+    ds_pre_render();
+    dis_finish();
     struct draw_instruction_t *instr;
 
     instr = dis_fetch_instruction();
@@ -369,6 +379,7 @@ ds_render_next_frame()
                 ds_mark_dirty();
                 float *vert = dis_read_data(instr->count * programs[ds.program].vertex_size);
                 vertex_buffer_push_back_vertices(programs[ds.program].vertex, vert, instr->count);
+                vertex_buffer_render()
                 break;
             case DI_PUSH_INDICES:
                 ds_mark_dirty();

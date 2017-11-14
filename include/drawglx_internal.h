@@ -119,11 +119,11 @@ struct draw_state
     int    program;
     int    dirty;
 
-    GLuint                 texture;
-    xoverlay_font_handle_t font;
+    xoverlay_font_handle_t    font;
     xoverlay_texture_handle_t thandle;
 
     GLuint shader;
+    GLuint texture;
 };
 
 struct draw_state ds;
@@ -148,6 +148,9 @@ ds_pre_render();
 
 void
 ds_post_render();
+
+void
+ds_start_next_frame();
 
 void
 ds_render_next_frame();

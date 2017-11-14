@@ -19,7 +19,6 @@ DECL_PROGRAM_INIT(triangles_plain)
 DECL_PROGRAM_LOAD(triangles_plain)
 {
     ds_use_shader(programs[PROGRAM_TRIANGLES_PLAIN].shader);
-    vertex_buffer_clear(programs[PROGRAM_TRIANGLES_PLAIN].vertex);
 }
 
 DECL_PROGRAM_RENDER(triangles_plain)

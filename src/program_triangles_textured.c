@@ -19,7 +19,6 @@ DECL_PROGRAM_INIT(triangles_textured)
 DECL_PROGRAM_LOAD(triangles_textured)
 {
     ds_use_shader(programs[PROGRAM_TRIANGLES_TEXTURED].shader);
-    vertex_buffer_clear(programs[PROGRAM_TRIANGLES_TEXTURED].vertex);
 }
 
 DECL_PROGRAM_RENDER(triangles_textured)
