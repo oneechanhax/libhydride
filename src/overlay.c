@@ -8,28 +8,48 @@
 #include "overlay.h"
 #include "input.h"
 #include "drawglx_internal.h"
+#include "log.h"
 
 #include <GL/glx.h>
 #include <X11/extensions/shape.h>
 #include <X11/extensions/Xfixes.h>
 
 #include <string.h>
+#include <stdio.h>
 
 int event_ShapeNotify;
 int event_ShapeError;
+struct xoverlay_library xoverlay_library;
+
+int preinit_done = 0;
+
+void xoverlay_preinit()
+{
+    preinit_done = 1;
+    if (init_input() < 0)
+    {
+        perror("XOVERLAY: init_input failed");
+        return;
+    }
+    fontapi_init();
+    textureapi_init();
+}
 
 int xoverlay_init()
 {
     memset(&xoverlay_library, 0, sizeof(struct xoverlay_library));
-    if (init_input() < 0)
-    {
-        return -1;
-    }
+
     xoverlay_library.display = XOpenDisplay(NULL);
     if (xoverlay_library.display == NULL)
     {
-        return -1;
+        log_write("XOVERLAY: XOpenDisplay failed\n");
+        return -2;
     }
+
+    if (preinit_done == 0)
+        xoverlay_preinit();
+    else
+        log_write("Preinit already done\n");
 
     xoverlay_library.screen = DefaultScreen(xoverlay_library.display);
     xoverlay_library.width = DisplayWidth(xoverlay_library.display, xoverlay_library.screen);
@@ -37,16 +57,20 @@ int xoverlay_init()
 
     if (!XShapeQueryExtension(xoverlay_library.display, &event_ShapeNotify, &event_ShapeError))
     {
-        return -1;
+        log_write("XOVERLAY: no shape extension\n");
+        return -3;
     }
 
     if (xoverlay_glx_init() < 0)
-        return -1;
+    {
+        log_write("XOVERLAY: xoverlay_glx_init failed\n");
+        return -4;
+    }
     if (xoverlay_glx_create_window() < 0)
-        return -1;
-
-    textureapi_init();
-    fontapi_init();
+    {
+        log_write("XOVERLAY: xoverlay_glx_create_window failed\n");
+        return -5;
+    }
 
     xoverlay_library.init = 1;
 
@@ -232,7 +256,7 @@ void xoverlay_poll_events()
     /*XEvent xevt;
     if (XCheckWindowEvent(xoverlay_library.display, xoverlay_library.window, KeyPressMask | KeyReleaseMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask | ExposureMask, &xevt))
     {
-        printf("event %d\n", xevt.type);
+        log_write("event %d\n", xevt.type);
         switch (xevt.type)
         {
         case KeyPress:

@@ -6,6 +6,8 @@
  */
 
 #include "input.h"
+#include "log.h"
+
 #include <fcntl.h>
 #include <dirent.h>
 #include <stdlib.h>

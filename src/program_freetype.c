@@ -11,6 +11,7 @@
 #include "programs.h"
 #include "texture-atlas.h"
 #include "drawglx_internal.h"
+#include "log.h"
 
 DECL_PROGRAM_INIT(freetype)
 {

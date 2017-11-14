@@ -14,12 +14,15 @@
 struct fontapi_font_t
 {
     int init;
+    int loaded;
+    int error;
 
     texture_font_t  *font;
     texture_atlas_t *atlas;
-};
 
-struct fontapi_font_t loaded_fonts[XOVERLAY_FONT_COUNT];
+    char path[256];
+    float size;
+};
 
 texture_font_t*
 fontapi_get(xoverlay_font_handle_t handle);
@@ -31,4 +34,4 @@ void
 fontapi_destroy();
 
 xoverlay_font_handle_t
-fontapi_add_font(struct fontapi_font_t font);
+fontapi_add_font(struct fontapi_font_t *font);

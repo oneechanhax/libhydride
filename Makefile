@@ -30,8 +30,8 @@ all:
 ifndef ARCH
 	$(MAKE) clean
 	$(MAKE) $(TARGET64) -e ARCH=64
-	#$(MAKE) clean
-	#$(MAKE) $(TARGET32) -e ARCH=32
+	$(MAKE) clean
+	$(MAKE) $(TARGET32) -e ARCH=32
 endif
 	
 install:

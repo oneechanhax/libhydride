@@ -8,6 +8,7 @@
 #include "drawglx_internal.h"
 #include "vertex_structs.h"
 #include "overlay.h"
+#include "log.h"
 
 #include <memory.h>
 #include <string.h>
@@ -297,8 +298,10 @@ ds_render_if_needed()
 void
 ds_pre_render()
 {
+    glXMakeContextCurrent(xoverlay_library.display, xoverlay_library.window, xoverlay_library.window, glx_state.context);
+
     glClear(GL_COLOR_BUFFER_BIT);
-    glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_TEXTURE_BIT | GL_COLOR_BUFFER_BIT);
+    glPushAttrib(GL_CURRENT_BIT | GL_ENABLE_BIT | GL_TEXTURE_BIT | GL_COLOR_BUFFER_BIT);
 
     glEnable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
@@ -329,6 +332,7 @@ ds_post_render()
     glPopAttrib();
     glFlush();
     glXSwapBuffers(xoverlay_library.display, xoverlay_library.window);
+    glXMakeContextCurrent(xoverlay_library.display, None, None, None);
 }
 
 void

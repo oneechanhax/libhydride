@@ -7,6 +7,7 @@
 
 #include "drawglx_internal.h"
 #include "textureapi_internal.h"
+#include "log.h"
 
 #include <string.h>
 #include <memory.h>
@@ -28,14 +29,14 @@ textureapi_load_png_rgba(const char *name, struct textureapi_texture_t *out)
     fread(header, 1, 8, file);
     if (png_sig_cmp(header, 0, 8))
     {
-        printf("textureapi: not a PNG file\n");
+        log_write("textureapi: not a PNG file\n");
         fclose(file);
         return -1;
     }
     png_structp pngstr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     if (pngstr == NULL)
     {
-        printf("textureapi: png creation error\n");
+        log_write("textureapi: png creation error\n");
         return -1;
     }
     png_infop pnginfo = png_create_info_struct(pngstr);
@@ -54,7 +55,7 @@ textureapi_load_png_rgba(const char *name, struct textureapi_texture_t *out)
     int row_bytes;
     if (PNG_COLOR_TYPE_RGBA != png_get_color_type(pngstr, pnginfo))
     {
-        printf("textureapi: not RGBA PNG\n");
+        log_write("textureapi: not RGBA PNG\n");
         png_destroy_read_struct(pngstr, pnginfo, pngend);
         fclose(file);
         return -1;
@@ -65,7 +66,7 @@ textureapi_load_png_rgba(const char *name, struct textureapi_texture_t *out)
     out->data = malloc(row_bytes * height * sizeof(png_byte));
     if (out->data == NULL)
     {
-        printf("malloc error\n");
+        log_write("malloc error\n");
         png_destroy_read_struct(pngstr, pnginfo, pngend);
         fclose(file);
         return -1;
@@ -73,7 +74,7 @@ textureapi_load_png_rgba(const char *name, struct textureapi_texture_t *out)
     row_pointers = malloc(height * sizeof(png_bytep));
     if (row_pointers == NULL)
     {
-        printf("malloc error\n");
+        log_write("malloc error\n");
         png_destroy_read_struct(pngstr, pnginfo, pngend);
         free(out->data);
         fclose(file);
@@ -103,7 +104,7 @@ textureapi_bind(xoverlay_texture_handle_t handle)
         return;
     if (!texture->bound)
     {
-        printf("generating texture\n");
+        log_write("generating texture\n");
         glGenTextures(1, &texture->texture_id);
         glBindTexture(GL_TEXTURE_2D, texture->texture_id);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -125,7 +126,7 @@ xoverlay_texture_load_png_rgba(const char *path)
     strncpy(result.filename, path, 255);
     if (textureapi_load_png_rgba(path, &result) != 0)
     {
-        printf("textureapi: could not load texture file %s\n", path);
+        log_write("textureapi: could not load texture file %s\n", path);
     }
     return textureapi_add_texture(result);
 }

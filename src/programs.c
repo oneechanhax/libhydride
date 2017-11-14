@@ -6,6 +6,7 @@
  */
 
 #include "drawglx_internal.h"
+#include "log.h"
 
 #include <stdio.h>
 
@@ -20,7 +21,7 @@ GLuint compile_shader(const char *source, GLenum type)
     {
         char error_log[256];
         glGetShaderInfoLog(shader, sizeof(error_log), NULL, error_log);
-        printf("GL Shader compilation error:\n%s\n", error_log);
+        log_write("GL Shader compilation error:\n%s\n", error_log);
         exit(1);
     }
     return shader;
@@ -65,7 +66,7 @@ program_init_inplace(struct program_t *program, const char *vertex_format, const
     {
         char error_log[256];
         glGetShaderInfoLog(program->shader, sizeof(error_log), NULL, error_log);
-        printf("GL Shader linking error:\n%s\n", error_log);
+        log_write("GL Shader linking error:\n%s\n", error_log);
         exit(1);
     }
 
@@ -120,7 +121,7 @@ const char *shader_v2ft2fc4f_freetype_frag =
 void
 program_init_everything()
 {
-    printf("Initializing programs\n");
+    log_write("Initializing programs\n");
     PROGRAM_INIT_INPLACE(&programs[PROGRAM_TRIANGLES_PLAIN], "vertex:2f,color:4f", shader_v2fc4f_frag, shader_v2fc4f_vert, triangles_plain);
     setup_matrices(programs[PROGRAM_TRIANGLES_PLAIN].shader, 0);
     PROGRAM_INIT_INPLACE(&programs[PROGRAM_TRIANGLES_TEXTURED], "vertex:2f,tex_coord:2f,color:4f", shader_v2ft2fc4f_frag, shader_v2ft2fc4f_vert, triangles_textured);

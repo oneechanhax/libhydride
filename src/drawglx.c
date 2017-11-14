@@ -9,6 +9,7 @@
 #include "overlay.h"
 #include "programs.h"
 #include "vertex_structs.h"
+#include "log.h"
 
 #include <GL/gl.h>
 #include <math.h>
@@ -55,7 +56,7 @@ int glx_is_extension_supported(const char *list, const char *extension)
 int xoverlay_glx_init()
 {
     glXQueryVersion(xoverlay_library.display, &glx_state.version_major, &glx_state.version_minor);
-    printf("GL Version: %s\n", glGetString(GL_VERSION));
+    log_write("GL Version: %s\n", glGetString(GL_VERSION));
     return 0;
 }
 
@@ -98,13 +99,18 @@ int xoverlay_glx_create_window()
         }
         XFree(info);
     }
+    if (fbc_best == -1)
+    {
+        log_write("Could not get FB config with 32 depth\n");
+        return -1;
+    }
     GLXFBConfig fbconfig = fbc[fbc_best];
     XFree(fbc);
 
     XVisualInfo *info = glXGetVisualFromFBConfig(xoverlay_library.display, fbconfig);
     if (info == NULL)
     {
-        printf("GLX initialization error\n");
+        log_write("GLX initialization error\n");
         return -1;
     }
     Window root = DefaultRootWindow(xoverlay_library.display);
@@ -119,11 +125,11 @@ int xoverlay_glx_create_window()
     attr.do_not_propagate_mask = (KeyPressMask|KeyReleaseMask|ButtonPressMask|ButtonReleaseMask|PointerMotionMask|ButtonMotionMask);
 
     unsigned long mask = CWBackPixel | CWBorderPixel | CWSaveUnder | CWOverrideRedirect | CWColormap | CWEventMask | CWDontPropagate;
-    printf("depth %d\n", info->depth);
+    log_write("depth %d\n", info->depth);
     xoverlay_library.window = XCreateWindow(xoverlay_library.display, root, 0, 0, xoverlay_library.width, xoverlay_library.height, 0, info->depth, InputOutput, info->visual, mask, &attr);
     if (xoverlay_library.window == 0)
     {
-        printf("X window initialization error\n");
+        log_write("X window initialization error\n");
         return -1;
     }
 
@@ -145,7 +151,7 @@ int xoverlay_glx_create_window()
 
     if (!glx_is_extension_supported(extensions, "GLX_ARB_create_context"))
     {
-        printf("Falling back to glXCreateNewContext\n");
+        log_write("Falling back to glXCreateNewContext\n");
         glx_state.context = glXCreateNewContext(xoverlay_library.display, fbconfig, GLX_RGBA_TYPE, NULL, GL_TRUE);
     }
     else
@@ -160,29 +166,29 @@ int xoverlay_glx_create_window()
     }
     if (glx_state.context == NULL)
     {
-        printf("OpenGL context initialization error\n");
+        log_write("OpenGL context initialization error\n");
         return -1;
     }
     if (!glXIsDirect(xoverlay_library.display, glx_state.context))
     {
-        printf("Context is indirect\n");
+        log_write("Context is indirect\n");
     }
     else
     {
-        printf("Context is direct\n");
+        log_write("Context is direct\n");
     }
     glXMakeCurrent(xoverlay_library.display, xoverlay_library.window, glx_state.context);
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK)
     {
-        printf("GLEW initialization error: %s\n", glewGetErrorString(glGetError()));
+        log_write("GLEW initialization error: %s\n", glewGetErrorString(glGetError()));
         return -1;
     }
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     glXSwapBuffers(xoverlay_library.display, xoverlay_library.window);
 
-    printf("Initializing DS\n");
+    log_write("Initializing DS\n");
     ds_init();
     program_init_everything();
 
@@ -215,6 +221,8 @@ xoverlay_draw_line(float x, float y, float dx, float dy, xoverlay_rgba_t color, 
 
     x += 0.5f;
     y += 0.5f;
+    dx -= 0.5f;
+    dy -= 0.5f;
 
     GLuint idx = dstream.next_index;
     GLuint indices[6] = { idx, idx + 1, idx + 3, idx + 3, idx +2, idx };
@@ -268,6 +276,8 @@ xoverlay_draw_rect(float x, float y, float w, float h, xoverlay_rgba_t color)
 
     x += 0.5f;
     y += 0.5f;
+    w -= 0.5f;
+    h -= 0.5f;
 
     struct vertex_v2fc4f vertices[4];
     GLuint indices[6] = { idx, idx + 1, idx + 2, idx + 2, idx + 3, idx };
@@ -320,6 +330,8 @@ xoverlay_draw_rect_textured(float x, float y, float w, float h, xoverlay_rgba_t 
 
     x += 0.5f;
     y += 0.5f;
+    w -= 0.5f;
+    h -= 0.5f;
 
     GLuint idx = dstream.next_index;
 
@@ -422,9 +434,10 @@ xoverlay_draw_string(float x, float y, const char *string, xoverlay_font_handle_
     ds_prepare_font(font);
 
     texture_font_t *fnt = fontapi_get(font);
-
     if (fnt == NULL)
-        return;
+    {
+        log_write("xoverlay_draw_string: INVALID FONT HANDLE %u\n", font);
+    }
 
     fnt->rendermode = RENDER_NORMAL;
     fnt->outline_thickness = 0.0f;
@@ -445,6 +458,8 @@ xoverlay_draw_string_with_outline(float x, float y, const char *string, xoverlay
         outline_color.a = color.a;
 
     texture_font_t *fnt = fontapi_get(font);
+    if (fnt == NULL)
+        return;
 
     fnt->rendermode = RENDER_OUTLINE_POSITIVE;
     fnt->outline_thickness = outline_width;
@@ -453,6 +468,43 @@ xoverlay_draw_string_with_outline(float x, float y, const char *string, xoverlay
     fnt->rendermode = RENDER_NORMAL;
     fnt->outline_thickness = 0.0f;
     draw_string_internal(x, y, string, fnt, *(vec4*)&color, out_x, out_y);
+}
+
+void
+xoverlay_get_string_size(const char *string, xoverlay_font_handle_t font, float *out_x, float *out_y)
+{
+
+    float pen_x = 0;
+    float pen_y = 0;
+
+    float size_x = 0;
+    float size_y = 0;
+
+    texture_font_t *fnt = fontapi_get(font);
+    if (fnt == NULL)
+        return;
+    texture_font_load_glyphs(fnt, string);
+
+    for (size_t i = 0; i < strlen(string); ++i)
+    {
+        texture_glyph_t *glyph = texture_font_find_glyph(fnt, &string[i]);
+        if (glyph == NULL)
+        {
+            continue;
+        }
+
+        pen_x += texture_glyph_get_kerning(glyph, &string[i]);
+        pen_x += glyph->advance_x;
+        if (pen_x > size_x)
+            size_x = pen_x;
+
+        if (glyph->height > size_y)
+            size_y = glyph->height;
+    }
+    if (out_x)
+        *out_x = size_x;
+    if (out_y)
+        *out_y = size_y;
 }
 
 int xoverlay_glx_destroy()

@@ -9,6 +9,7 @@
 
 #include "programs.h"
 #include "drawglx_internal.h"
+#include "log.h"
 
 DECL_PROGRAM_INIT(triangles_textured)
 {
