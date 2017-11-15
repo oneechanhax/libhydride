@@ -13,7 +13,7 @@ TARGET32=$(BIN32_DIR)/liboverlay.so
 TARGET64=$(BIN64_DIR)/liboverlay.so
 TARGET=undefined
 
-.PHONY: clean directories
+.PHONY: clean clean_objects directories
 
 ifeq ($(ARCH),32)
 CFLAGS+=-m32
@@ -28,9 +28,9 @@ all:
 	mkdir -p $(BIN32_DIR)
 	mkdir -p $(BIN64_DIR)
 ifndef ARCH
-	$(MAKE) clean
+	$(MAKE) clean_objects
 	$(MAKE) $(TARGET64) -e ARCH=64
-	$(MAKE) clean
+	$(MAKE) clean_objects
 	$(MAKE) $(TARGET32) -e ARCH=32
 endif
 	
@@ -58,6 +58,9 @@ ftgl/makefont.o : CFLAGS+=-w
 
 $(TARGET): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) $(LDLIBS) -o $@
+
+clean_objects:
+	find . -type f -name '*.o' -delete
 
 clean:
 	find . -type f -name '*.o' -delete
