@@ -261,7 +261,7 @@ xoverlay_draw_line(float x, float y, float dx, float dy, xoverlay_rgba_t color, 
     vertices[3].pos.y = ey + ny;
     vertices[3].color = *(vec4*)&color;
 
-    dis_push_vertices(4, sizeof(struct vertex_v2fc4f), vertices);
+    ds_push_vertices(4, sizeof(struct vertex_v2fc4f), vertices);
     dis_push_indices(6, indices);
 }
 
@@ -298,7 +298,7 @@ xoverlay_draw_rect(float x, float y, float w, float h, xoverlay_rgba_t color)
     vertices[3].pos.y = y;
     vertices[3].color = *(vec4*)&color;
 
-    dis_push_vertices(4, sizeof(struct vertex_v2fc4f), vertices);
+    ds_push_vertices(4, sizeof(struct vertex_v2fc4f), vertices);
     dis_push_indices(6, indices);
 }
 
@@ -326,7 +326,7 @@ xoverlay_draw_rect_textured(float x, float y, float w, float h, xoverlay_rgba_t 
         return;
 
     ds_prepare_program(PROGRAM_TRIANGLES_TEXTURED);
-    ds_prepare_texture_handle(texture);
+    ds_prepare_texture(texture);
 
     x += 0.5f;
     y += 0.5f;
@@ -367,7 +367,7 @@ xoverlay_draw_rect_textured(float x, float y, float w, float h, xoverlay_rgba_t 
     vertices[3].uv.y = t1;
     vertices[3].color = *(vec4*)&color;
 
-    dis_push_vertices(4, sizeof(struct vertex_v2ft2fc4f), vertices);
+    ds_push_vertices(4, sizeof(struct vertex_v2ft2fc4f), vertices);
     dis_push_indices(6, indices);
 }
 
@@ -428,7 +428,7 @@ draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, 
     }
 
     dis_push_indices(6 * len, indices);
-    dis_push_vertices(4 * len, sizeof(struct vertex_v2ft2fc4f), vertices);
+    ds_push_vertices(4 * len, sizeof(struct vertex_v2ft2fc4f), vertices);
 
     if (out_x)
         *out_x = pen_x - x;

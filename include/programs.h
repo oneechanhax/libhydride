@@ -44,8 +44,7 @@ typedef void(*program_callback_empty_fn)();
 
 struct program_t
 {
-    vertex_buffer_t *vertex;
-    size_t vertex_size;
+    struct draw_buffer_t *buffer;
     GLuint shader;
 
     program_callback_empty_fn init;

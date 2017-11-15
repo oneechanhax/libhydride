@@ -77,11 +77,12 @@ program_init_inplace(struct program_t *program, const char *vertex_format, const
     program_init_inplace(location, format, fragment, vertex, PROGRAM_INIT(name), PROGRAM_LOAD(name), PROGRAM_RENDER(name), PROGRAM_UNLOAD(name), PROGRAM_DESTROY(name))
 
 const char *shader_v2fc4f_vert =
+        "#version 330 core\n"
         "uniform mat4 model;\n"
         "uniform mat4 view;\n"
         "uniform mat4 projection;\n"
-        "attribute vec2 vertex;\n"
-        "attribute vec4 color;\n"
+        "layout(location = 0) in vec2 vertex;\n"
+        "layout(location = 1) in vec4 color;\n"
         "void main()\n"
         "{\n"
         "    gl_FrontColor = color;\n"
@@ -92,12 +93,13 @@ const char *shader_v2fc4f_frag =
         "    gl_FragColor = gl_Color;\n"
         "}";
 const char *shader_v2ft2fc4f_vert =
+        "#version 330 core\n"
         "uniform mat4 model;\n"
         "uniform mat4 view;\n"
         "uniform mat4 projection;\n"
-        "attribute vec2 vertex;\n"
-        "attribute vec2 tex_coord;\n"
-        "attribute vec4 color;\n"
+        "layout(location = 0) in vec2 vertex;\n"
+        "layout(location = 1) in vec2 tex_coord;\n"
+        "layout(location = 2) in vec4 color;\n"
         "void main()\n"
         "{\n"
         "    gl_TexCoord[0].xy = tex_coord.xy;\n"

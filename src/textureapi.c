@@ -115,7 +115,7 @@ textureapi_bind(xoverlay_texture_handle_t handle)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         texture->bound = 1;
     }
-    ds_bind_texture(texture->texture_id);
+    ds_use_texture(texture->texture_id);
 }
 
 xoverlay_texture_handle_t

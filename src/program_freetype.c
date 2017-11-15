@@ -23,7 +23,7 @@ DECL_PROGRAM_LOAD(freetype)
     texture_font_t *fnt = fontapi_get(ds.font);
     if (fnt == NULL)
         return;
-    ds_bind_texture(fnt->atlas->id);
+    ds_use_texture(fnt->atlas->id);
 }
 
 DECL_PROGRAM_RENDER(freetype)
@@ -52,7 +52,7 @@ program_freetype_switch_font(xoverlay_font_handle_t font)
     {
         glGenTextures(1, &fnt->atlas->id);
     }
-    ds_bind_texture(fnt->atlas->id);
+    ds_use_texture(fnt->atlas->id);
     if (fnt->atlas->dirty) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);

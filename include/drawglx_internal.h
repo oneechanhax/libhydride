@@ -23,9 +23,7 @@ enum
 {
     DI_INVALID_INSTRUCTION,
     DI_SWITCH_PROGRAM,
-    DI_PUSH_VERTICES,
-    DI_PUSH_INDICES,
-    DI_PROGRAM_SWITCH_TEXTURE,
+    DI_DRAW_ARRAYS,
     DI_PROGRAM_SWITCH_FONT,
     DI_TEXTUREAPI_BIND_TEXTURE,
     DI_TERMINATE
@@ -39,82 +37,32 @@ struct draw_instruction_t
         /* DI_SWITCH_PROGRAM */
         int    program;
         /* DI_PUSH_VERTICES / DI_PUSH_INDICES */
-        size_t count;
-        /* DI_PROGRAM_SWITCH_TEXTURE */
-        GLuint texture;
+        struct
+        {
+            uint32_t arr_start;
+            uint32_t arr_count;
+        };
         /* DI_PROGRAM_SWITCH_FONT */
         xoverlay_font_handle_t font;
-        /* */
-        xoverlay_texture_handle_t thandle;
+        /* DI_TEXTUREAPI_BIND_TEXTURE */
+        xoverlay_texture_handle_t texture;
     };
 };
 
-struct draw_instruction_stream_t
-{
-    void  *memory;
-    size_t capacity;
-    size_t write_ptr;
-    size_t read_ptr;
-    size_t last_draw_instruction_offset;
-    GLuint next_index;
-};
-
-struct draw_instruction_stream_t dstream;
+void
+ds_push_instruction(struct draw_instruction_t instr);
 
 void
-dis_init();
-
-void
-dis_destroy();
-
-void
-dis_reset();
-
-void
-dis_reserve(size_t bytes);
+ds_push_vertices(size_t count, size_t vertex_size, void *vertex_data);
 
 struct draw_instruction_t*
-dis_last_pushed_instruction();
-
-void
-dis_push_data(size_t bytes, void *data);
-
-void
-dis_push_instruction(struct draw_instruction_t instr);
-
-size_t
-dis_fetch_data(size_t bytes, void *data);
-
-void*
-dis_read_data(size_t bytes);
-
-void
-dis_switch_program(int program);
-
-void
-dis_push_vertices(size_t count, size_t vertex_size, void *vertex_data);
-
-void
-dis_push_indices(size_t count, GLuint *index_data);
-
-void
-dis_program_switch_texture(GLuint texture);
-
-void
-dis_textureapi_switch_texture(xoverlay_texture_handle_t texture);
-
-void
-dis_program_switch_font(xoverlay_font_handle_t font);
-
-void
-dis_finish();
-
-struct draw_instruction_t*
-dis_fetch_instruction();
+ds_fetch_instruction();
 
 struct draw_state
 {
-    mat4   model, view, projection;
+    vector_t instructions;
+    uint32_t next_fetch_instruction;
+    mat4     model, view, projection;
 
     int    program;
     int    dirty;
@@ -158,10 +106,7 @@ ds_render_next_frame();
 /* To be called by draw functions */
 
 void
-ds_prepare_texture_handle(xoverlay_texture_handle_t handle);
-
-void
-ds_prepare_texture(GLuint texture);
+ds_prepare_texture(xoverlay_texture_handle_t texture);
 
 void
 ds_prepare_font(xoverlay_font_handle_t font);
@@ -169,7 +114,7 @@ ds_prepare_font(xoverlay_font_handle_t font);
 /* To be called from programs */
 
 void
-ds_bind_texture(GLuint texture);
+ds_use_texture(GLuint texture);
 
 void
 ds_use_shader(GLuint shader);
