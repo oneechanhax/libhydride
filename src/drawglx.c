@@ -7,7 +7,7 @@
 
 #include "drawglx_internal.h"
 #include "overlay.h"
-#include "programs.h"
+#include "program.h"
 #include "vertex_structs.h"
 #include "log.h"
 
@@ -190,7 +190,7 @@ int xoverlay_glx_create_window()
 
     log_write("Initializing DS\n");
     ds_init();
-    program_init_everything();
+    program_init();
 
     return 0;
 }
@@ -217,16 +217,15 @@ xoverlay_draw_line(float x, float y, float dx, float dy, xoverlay_rgba_t color, 
     if (xoverlay_library.mapped == 0 || xoverlay_library.drawing == 0)
         return;
 
-    ds_prepare_program(PROGRAM_TRIANGLES_PLAIN);
-
     x += 0.5f;
     y += 0.5f;
     dx -= 0.5f;
     dy -= 0.5f;
 
-    GLuint idx = dstream.next_index;
-    GLuint indices[6] = { idx, idx + 1, idx + 3, idx + 3, idx +2, idx };
-    struct vertex_v2fc4f vertices[4];
+    GLuint idx = program_next_index();
+    GLuint indices[6] = { idx, idx + 1, idx + 3, idx + 3, idx + 2, idx };
+
+    struct vertex_main vertices[4];
 
     float nx = -dy;
     float ny = dx;
@@ -243,26 +242,29 @@ xoverlay_draw_line(float x, float y, float dx, float dy, xoverlay_rgba_t color, 
     nx /= length;
     ny /= length;
 
-    vertices[0].pos.x = x - nx;
-    vertices[0].pos.y = y - ny;
+    vertices[0].position.x = x - nx;
+    vertices[0].position.y = y - ny;
     vertices[0].color = *(vec4*)&color;
+    vertices[0].mode = DRAW_MODE_PLAIN;
 
-    vertices[1].pos.x = x + nx;
-    vertices[1].pos.y = y + ny;
+    vertices[1].position.x = x + nx;
+    vertices[1].position.y = y + ny;
     vertices[1].color = *(vec4*)&color;
+    vertices[1].mode = DRAW_MODE_PLAIN;
 
 
-    vertices[2].pos.x = ex - nx;
-    vertices[2].pos.y = ey - ny;
+    vertices[2].position.x = ex - nx;
+    vertices[2].position.y = ey - ny;
     vertices[2].color = *(vec4*)&color;
+    vertices[2].mode = DRAW_MODE_PLAIN;
 
 
-    vertices[3].pos.x = ex + nx;
-    vertices[3].pos.y = ey + ny;
+    vertices[3].position.x = ex + nx;
+    vertices[3].position.y = ey + ny;
     vertices[3].color = *(vec4*)&color;
+    vertices[3].mode = DRAW_MODE_PLAIN;
 
-    dis_push_vertices(4, sizeof(struct vertex_v2fc4f), vertices);
-    dis_push_indices(6, indices);
+    vertex_buffer_push_back(program.buffer, vertices, 4, indices, 6);
 }
 
 void
@@ -271,35 +273,37 @@ xoverlay_draw_rect(float x, float y, float w, float h, xoverlay_rgba_t color)
     if (xoverlay_library.mapped == 0 || xoverlay_library.drawing == 0)
         return;
 
-    ds_prepare_program(PROGRAM_TRIANGLES_PLAIN);
-    GLuint idx = dstream.next_index;
+    GLuint idx = program_next_index();
 
     x += 0.5f;
     y += 0.5f;
     w -= 0.5f;
     h -= 0.5f;
 
-    struct vertex_v2fc4f vertices[4];
+    struct vertex_main vertices[4];
     GLuint indices[6] = { idx, idx + 1, idx + 2, idx + 2, idx + 3, idx };
 
-    vertices[0].pos.x = x;
-    vertices[0].pos.y = y;
+    vertices[0].position.x = x;
+    vertices[0].position.y = y;
     vertices[0].color = *(vec4*)&color;
+    vertices[0].mode = DRAW_MODE_PLAIN;
 
-    vertices[1].pos.x = x;
-    vertices[1].pos.y = y + h;
+    vertices[1].position.x = x;
+    vertices[1].position.y = y + h;
     vertices[1].color = *(vec4*)&color;
+    vertices[1].mode = DRAW_MODE_PLAIN;
 
-    vertices[2].pos.x = x + w;
-    vertices[2].pos.y = y + h;
+    vertices[2].position.x = x + w;
+    vertices[2].position.y = y + h;
     vertices[2].color = *(vec4*)&color;
+    vertices[2].mode = DRAW_MODE_PLAIN;
 
-    vertices[3].pos.x = x + w;
-    vertices[3].pos.y = y;
+    vertices[3].position.x = x + w;
+    vertices[3].position.y = y;
     vertices[3].color = *(vec4*)&color;
+    vertices[3].mode = DRAW_MODE_PLAIN;
 
-    dis_push_vertices(4, sizeof(struct vertex_v2fc4f), vertices);
-    dis_push_indices(6, indices);
+    vertex_buffer_push_back(program.buffer, vertices, 4, indices, 6);
 }
 
 void
@@ -325,17 +329,16 @@ xoverlay_draw_rect_textured(float x, float y, float w, float h, xoverlay_rgba_t 
     if (tex == NULL)
         return;
 
-    ds_prepare_program(PROGRAM_TRIANGLES_TEXTURED);
-    ds_prepare_texture_handle(texture);
+    ds_bind_texture(tex->texture_id);
 
     x += 0.5f;
     y += 0.5f;
     w -= 0.5f;
     h -= 0.5f;
 
-    GLuint idx = dstream.next_index;
+    GLuint idx = program_next_index();
 
-    struct vertex_v2ft2fc4f vertices[4];
+    struct vertex_main vertices[4];
     GLuint indices[6] = { idx, idx + 1, idx + 2, idx + 2, idx + 3, idx };
 
     float s0 = tx / tex->width;
@@ -343,38 +346,40 @@ xoverlay_draw_rect_textured(float x, float y, float w, float h, xoverlay_rgba_t 
     float t0 = ty / tex->height;
     float t1 = (ty + th) / tex->height;
 
-    vertices[0].pos.x = x;
-    vertices[0].pos.y = y;
-    vertices[0].uv.x = s0;
-    vertices[0].uv.y = t1;
+    vertices[0].position.x = x;
+    vertices[0].position.y = y;
+    vertices[0].tex_coords.x = s0;
+    vertices[0].tex_coords.y = t1;
     vertices[0].color = *(vec4*)&color;
+    vertices[0].mode = DRAW_MODE_TEXTURED;
 
-    vertices[1].pos.x = x;
-    vertices[1].pos.y = y + h;
-    vertices[1].uv.x = s0;
-    vertices[1].uv.y = t0;
+    vertices[1].position.x = x;
+    vertices[1].position.y = y + h;
+    vertices[1].tex_coords.x = s0;
+    vertices[1].tex_coords.y = t0;
     vertices[1].color = *(vec4*)&color;
+    vertices[0].mode = DRAW_MODE_TEXTURED;
 
-    vertices[2].pos.x = x + w;
-    vertices[2].pos.y = y + h;
-    vertices[2].uv.x = s1;
-    vertices[2].uv.y = t0;
+    vertices[2].position.x = x + w;
+    vertices[2].position.y = y + h;
+    vertices[2].tex_coords.x = s1;
+    vertices[2].tex_coords.y = t0;
     vertices[2].color = *(vec4*)&color;
+    vertices[2].mode = DRAW_MODE_TEXTURED;
 
-    vertices[3].pos.x = x + w;
-    vertices[3].pos.y = y;
-    vertices[3].uv.x = s1;
-    vertices[3].uv.y = t1;
+    vertices[3].position.x = x + w;
+    vertices[3].position.y = y;
+    vertices[3].tex_coords.x = s1;
+    vertices[3].tex_coords.y = t1;
     vertices[3].color = *(vec4*)&color;
+    vertices[3].mode = DRAW_MODE_TEXTURED;
 
-    dis_push_vertices(4, sizeof(struct vertex_v2ft2fc4f), vertices);
-    dis_push_indices(6, indices);
+    vertex_buffer_push_back(program.buffer, vertices, 4, indices, 6);
 }
 
 void
 draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, vec4 color, float *out_x, float *out_y)
 {
-
     float pen_x = x;
     float pen_y = y;
     float size_y = 0;
@@ -386,7 +391,9 @@ draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, 
         return;
 
     GLuint indices[6 * len];
-    struct vertex_v2ft2fc4f vertices[4 * len];
+    struct vertex_main vertices[4 * len];
+
+    GLuint idx = program_next_index();
 
     for (size_t i = 0; i < len; ++i)
     {
@@ -409,26 +416,25 @@ draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, 
         float s1 = glyph->s1;
         float t1 = glyph->t1;
 
-        GLuint idx = dstream.next_index + i * 4;
         indices[i * 6 + 0] = idx;
         indices[i * 6 + 1] = idx + 1;
         indices[i * 6 + 2] = idx + 2;
         indices[i * 6 + 3] = idx + 2;
         indices[i * 6 + 4] = idx + 3;
         indices[i * 6 + 5] = idx;
+        idx += 6;
 
-        vertices[i * 4 + 0] = (struct vertex_v2ft2fc4f){ (vec2){ x0, y0 }, (vec2){ s0, t0 }, color };
-        vertices[i * 4 + 1] = (struct vertex_v2ft2fc4f){ (vec2){ x0, y1 }, (vec2){ s0, t1 }, color };
-        vertices[i * 4 + 2] = (struct vertex_v2ft2fc4f){ (vec2){ x1, y1 }, (vec2){ s1, t1 }, color };
-        vertices[i * 4 + 3] = (struct vertex_v2ft2fc4f){ (vec2){ x1, y0 }, (vec2){ s1, t0 }, color };
+        vertices[i * 4 + 0] = (struct vertex_main){ (vec2){ x0, y0 }, (vec2){ s0, t0 }, color, DRAW_MODE_FREETYPE };
+        vertices[i * 4 + 1] = (struct vertex_main){ (vec2){ x0, y1 }, (vec2){ s0, t1 }, color, DRAW_MODE_FREETYPE };
+        vertices[i * 4 + 2] = (struct vertex_main){ (vec2){ x1, y1 }, (vec2){ s1, t1 }, color, DRAW_MODE_FREETYPE };
+        vertices[i * 4 + 3] = (struct vertex_main){ (vec2){ x1, y0 }, (vec2){ s1, t0 }, color, DRAW_MODE_FREETYPE };
 
         pen_x += glyph->advance_x;
         if (glyph->height > size_y)
             size_y = glyph->height;
     }
 
-    dis_push_indices(6 * len, indices);
-    dis_push_vertices(4 * len, sizeof(struct vertex_v2ft2fc4f), vertices);
+    vertex_buffer_push_back(program.buffer, vertices, len * 4, indices, len * 6);
 
     if (out_x)
         *out_x = pen_x - x;
@@ -441,15 +447,14 @@ xoverlay_draw_string(float x, float y, const char *string, xoverlay_font_handle_
     if (xoverlay_library.mapped == 0 || xoverlay_library.drawing == 0)
         return;
 
-    ds_prepare_program(PROGRAM_FREETYPE);
-    ds_prepare_font(font);
-
     texture_font_t *fnt = fontapi_get(font);
     if (fnt == NULL)
     {
         log_write("xoverlay_draw_string: INVALID FONT HANDLE %u\n", font);
         return;
     }
+
+    ds_bind_texture(fnt->atlas->id);
 
     fnt->rendermode = RENDER_NORMAL;
     fnt->outline_thickness = 0.0f;
@@ -463,9 +468,6 @@ xoverlay_draw_string_with_outline(float x, float y, const char *string, xoverlay
     if (xoverlay_library.mapped == 0 || xoverlay_library.drawing == 0)
         return;
 
-    ds_prepare_program(PROGRAM_FREETYPE);
-    ds_prepare_font(font);
-
     if (adjust_outline_alpha)
         outline_color.a = color.a;
 
@@ -475,6 +477,8 @@ xoverlay_draw_string_with_outline(float x, float y, const char *string, xoverlay
         log_write("xoverlay_draw_string: INVALID FONT HANDLE %u\n", font);
         return;
     }
+
+    ds_bind_texture(fnt->atlas->id);
 
     fnt->rendermode = RENDER_OUTLINE_POSITIVE;
     fnt->outline_thickness = outline_width;

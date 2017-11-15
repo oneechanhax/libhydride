@@ -7,19 +7,11 @@
 
 #pragma once
 
-/* Used for drawing primitives */
-struct vertex_v2fc4f
+struct vertex_main
 {
-    vec2 pos;
+    vec2 position;
+    vec2 tex_coords;
     vec4 color;
+    unsigned mode;
 };
-
-/* Used for drawing textured primitives and freetype-gl fonts */
-struct vertex_v2ft2fc4f
-{
-    vec2 pos;
-    vec2 uv;
-    vec4 color;
-};
-
 

@@ -287,13 +287,13 @@ void xoverlay_poll_events()
 void xoverlay_draw_begin()
 {
     if (!xoverlay_library.init) return;
-
+    ds_pre_render();
     xoverlay_library.drawing = 1;
 }
 
 void xoverlay_draw_end()
 {
     if (!xoverlay_library.init) return;
-    ds_render_next_frame();
+    ds_post_render();
     xoverlay_library.drawing = 0;
 }
