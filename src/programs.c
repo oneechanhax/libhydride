@@ -95,28 +95,9 @@ const char *shader_v2ft2fc4f_vert =
         "uniform mat4 model;\n"
         "uniform mat4 view;\n"
         "uniform mat4 projection;\n"
-        "attribute vec2 vertex;\n"
-        "attribute vec2 tex_coord;\n"
-        "attribute vec4 color;\n"
-        "void main()\n"
-        "{\n"
-        "    gl_TexCoord[0].xy = tex_coord.xy;\n"
-        "    gl_FrontColor     = color;\n"
-        "    gl_Position       = projection*(view*(model*vec4(vertex,0.0,1.0)));\n"
-        "}";
-const char *shader_v2ft2fc4f_frag =
-        "uniform sampler2D texture;\n"
-        "void main()\n"
-        "{\n"
-        "       vec4 tex = texture2D(texture, gl_TexCoord[0].xy);\n"
-        "       gl_FragColor = vec4(gl_Color.rgb * tex.rgb, gl_Color.a*tex.a);\n"
-        "}";
-const char *shader_v2ft2fc4f_freetype_frag =
-        "uniform sampler2D texture;\n"
-        "void main()\n"
-        "{\n"
-        "       gl_FragColor = vec4(gl_Color.rgb, gl_Color.a * texture2D(texture, gl_TexCoord[0].xy).r);\n"
-        "}";
+
+        
+
 
 void
 program_init_everything()
