@@ -61,3 +61,5 @@ $(TARGET): $(OBJECTS)
 
 clean:
 	find . -type f -name '*.o' -delete
+	rm -f bin32/*.so
+	rm -f bin64/*.so
