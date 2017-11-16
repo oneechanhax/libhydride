@@ -378,7 +378,7 @@ void
 draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, vec4 color, float *out_x, float *out_y)
 {
     float pen_x = x;
-    float pen_y = y;
+    float pen_y = y + fnt->height / 1.5f;
     float size_y = 0;
 
     //texture_font_load_glyphs(fnt, string);
@@ -389,10 +389,10 @@ draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, 
     }
     ds_bind_texture(fnt->atlas->id);
     if (fnt->atlas->dirty) {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, fnt->atlas->width, fnt->atlas->height, 0, GL_RED, GL_UNSIGNED_BYTE, fnt->atlas->data);
         fnt->atlas->dirty = 0;
     }
@@ -406,7 +406,7 @@ draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, 
         texture_glyph_t *glyph = texture_font_find_glyph(fnt, &string[i]);
         if (glyph == NULL)
         {
-            texture_font_load_glyph(fnt, &string[i - 1]);
+            texture_font_load_glyph(fnt, &string[i]);
             continue;
         }
         GLuint indices[6];
@@ -438,6 +438,7 @@ draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, 
         vertices[3] = (struct vertex_main){ (vec2){ x1, y0 }, (vec2){ s1, t0 }, color, DRAW_MODE_FREETYPE };
 
         pen_x += glyph->advance_x;
+        pen_x = (int)pen_x + 1;
         if (glyph->height > size_y)
             size_y = glyph->height;
 

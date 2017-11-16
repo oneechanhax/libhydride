@@ -8,6 +8,7 @@ BIN64_DIR=bin64
 SOURCES=$(shell find $(SRC_DIR) -name "*.c" -print)
 SOURCES+=$(shell find "ftgl" -name "*.c" -print)
 OBJECTS=$(SOURCES:.c=.o)
+DEPENDS=$(SOURCES:.c=.d)
 
 TARGET32=$(BIN32_DIR)/liboverlay.so
 TARGET64=$(BIN64_DIR)/liboverlay.so
@@ -56,6 +57,9 @@ ftgl/makefont.o : CFLAGS+=-w
 .c.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
+.c.d:
+	@$(CC) -M $(CXXFLAGS) $< > $@
+
 $(TARGET): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) $(LDLIBS) -o $@
 
@@ -64,5 +68,10 @@ clean_objects:
 
 clean:
 	find . -type f -name '*.o' -delete
+	find . -type f -name '*.d' -delete
 	rm -f bin32/*.so
 	rm -f bin64/*.so
+	
+ifneq ($(MAKECMDGOALS), clean)
+-include $(DEPENDS)
+endif

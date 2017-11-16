@@ -42,12 +42,15 @@ xoverlay_font_load(const char *path, float size)
         if (result.font == NULL)
         {
             log_write("fontapi: load: could not init font\n");
+            return XOVERLAY_FONT_INVALID_HANDLE;
         }
     }
     else
     {
         log_write("fontapi: load: could not init atlas\n");
+        return XOVERLAY_FONT_INVALID_HANDLE;
     }
+    result.font->hinting = 0;
     return fontapi_add_font(&result);
 }
 
