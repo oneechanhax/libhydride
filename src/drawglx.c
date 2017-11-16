@@ -404,11 +404,6 @@ draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, 
     if (len == 0)
         return;
 
-    GLuint indices[6 * len];
-    struct vertex_main vertices[4 * len];
-
-    GLuint idx = program_next_index();
-
     for (size_t i = 0; i < len; ++i)
     {
         texture_glyph_t *glyph = texture_font_find_glyph(fnt, &string[i]);
@@ -416,6 +411,8 @@ draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, 
         {
             continue;
         }
+        GLuint indices[6];
+        struct vertex_main vertices[4];
         if (i > 0)
         {
             x += texture_glyph_get_kerning(glyph, &string[i - 1]);
@@ -430,25 +427,24 @@ draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, 
         float s1 = glyph->s1;
         float t1 = glyph->t1;
 
-        indices[i * 6 + 0] = idx;
-        indices[i * 6 + 1] = idx + 1;
-        indices[i * 6 + 2] = idx + 2;
-        indices[i * 6 + 3] = idx + 2;
-        indices[i * 6 + 4] = idx + 3;
-        indices[i * 6 + 5] = idx;
-        idx += 4;
+        indices[0] = 0;
+        indices[1] = 1;
+        indices[2] = 2;
+        indices[3] = 2;
+        indices[4] = 3;
+        indices[5] = 0;
 
-        vertices[i * 4 + 0] = (struct vertex_main){ (vec2){ x0, y0 }, (vec2){ s0, t0 }, color, DRAW_MODE_TEXTURED };
-        vertices[i * 4 + 1] = (struct vertex_main){ (vec2){ x0, y1 }, (vec2){ s0, t1 }, color, DRAW_MODE_TEXTURED };
-        vertices[i * 4 + 2] = (struct vertex_main){ (vec2){ x1, y1 }, (vec2){ s1, t1 }, color, DRAW_MODE_TEXTURED };
-        vertices[i * 4 + 3] = (struct vertex_main){ (vec2){ x1, y0 }, (vec2){ s1, t0 }, color, DRAW_MODE_TEXTURED };
+        vertices[0] = (struct vertex_main){ (vec2){ x0, y0 }, (vec2){ s0, t0 }, color, DRAW_MODE_FREETYPE };
+        vertices[1] = (struct vertex_main){ (vec2){ x0, y1 }, (vec2){ s0, t1 }, color, DRAW_MODE_FREETYPE };
+        vertices[2] = (struct vertex_main){ (vec2){ x1, y1 }, (vec2){ s1, t1 }, color, DRAW_MODE_FREETYPE };
+        vertices[3] = (struct vertex_main){ (vec2){ x1, y0 }, (vec2){ s1, t0 }, color, DRAW_MODE_FREETYPE };
 
         pen_x += glyph->advance_x;
         if (glyph->height > size_y)
             size_y = glyph->height;
-    }
 
-    vertex_buffer_push_back(program.buffer, vertices, len * 4, indices, len * 6);
+        vertex_buffer_push_back(program.buffer, vertices, 4, indices, 6);
+    }
 
     if (out_x)
         *out_x = pen_x - x;
