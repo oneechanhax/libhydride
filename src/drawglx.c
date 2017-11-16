@@ -222,8 +222,7 @@ xoverlay_draw_line(float x, float y, float dx, float dy, xoverlay_rgba_t color, 
     dx -= 0.5f;
     dy -= 0.5f;
 
-    GLuint idx = program_next_index();
-    GLuint indices[6] = { idx, idx + 1, idx + 3, idx + 3, idx + 2, idx };
+    GLuint indices[6] = { 0, 1, 3, 3, 2, 0 };
 
     struct vertex_main vertices[4];
 
@@ -273,15 +272,13 @@ xoverlay_draw_rect(float x, float y, float w, float h, xoverlay_rgba_t color)
     if (xoverlay_library.mapped == 0 || xoverlay_library.drawing == 0)
         return;
 
-    GLuint idx = program_next_index();
-
     x += 0.5f;
     y += 0.5f;
     w -= 0.5f;
     h -= 0.5f;
 
     struct vertex_main vertices[4];
-    GLuint indices[6] = { idx, idx + 1, idx + 2, idx + 2, idx + 3, idx };
+    GLuint indices[6] = { 0, 1, 2, 2, 3, 0 };
 
     vertices[0].position.x = x;
     vertices[0].position.y = y;
@@ -384,7 +381,7 @@ draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, 
     float pen_y = y;
     float size_y = 0;
 
-    texture_font_load_glyphs(fnt, string);
+    //texture_font_load_glyphs(fnt, string);
 
     if (fnt->atlas->id == 0)
     {
@@ -409,6 +406,7 @@ draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, 
         texture_glyph_t *glyph = texture_font_find_glyph(fnt, &string[i]);
         if (glyph == NULL)
         {
+            texture_font_load_glyph(fnt, &string[i - 1]);
             continue;
         }
         GLuint indices[6];
