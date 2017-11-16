@@ -386,9 +386,12 @@ draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, 
 
     texture_font_load_glyphs(fnt, string);
 
-    if (fnt->atlas->dirty)
+    if (fnt->atlas->id == 0)
     {
-        log_write("Atlas updated\n");
+        glGenTextures(1, &fnt->atlas->id);
+    }
+    ds_bind_texture(fnt->atlas->id);
+    if (fnt->atlas->dirty) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -488,8 +491,6 @@ xoverlay_draw_string_with_outline(float x, float y, const char *string, xoverlay
         log_write("xoverlay_draw_string: INVALID FONT HANDLE %u\n", font);
         return;
     }
-
-    ds_bind_texture(fnt->atlas->id);
 
     fnt->rendermode = RENDER_OUTLINE_POSITIVE;
     fnt->outline_thickness = outline_width;
