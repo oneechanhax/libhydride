@@ -37,22 +37,6 @@ ds_destroy()
 }
 
 void
-ds_mark_dirty()
-{
-    ds.dirty = 1;
-}
-
-void
-ds_render_if_needed()
-{
-    if (ds.dirty)
-    {
-        program_draw();
-    }
-    ds.dirty = 0;
-}
-
-void
 ds_pre_render()
 {
     glXMakeContextCurrent(xoverlay_library.display, xoverlay_library.window, xoverlay_library.window, glx_state.context);
@@ -88,6 +72,8 @@ ds_pre_render()
 void
 ds_post_render()
 {
+    program_draw();
+    program_reset();
     glPopClientAttrib();
     glPopAttrib();
     glFlush();
@@ -100,7 +86,8 @@ ds_bind_texture(GLuint texture)
 {
     if (ds.texture != texture)
     {
-        ds_render_if_needed();
+        program_draw();
+        program_reset();
         ds.texture = texture;
         glBindTexture(GL_TEXTURE_2D, texture);
     }

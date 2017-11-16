@@ -329,7 +329,7 @@ xoverlay_draw_rect_textured(float x, float y, float w, float h, xoverlay_rgba_t 
     if (tex == NULL)
         return;
 
-    ds_bind_texture(tex->texture_id);
+    textureapi_bind(texture);
 
     x += 0.5f;
     y += 0.5f;
@@ -358,7 +358,7 @@ xoverlay_draw_rect_textured(float x, float y, float w, float h, xoverlay_rgba_t 
     vertices[1].tex_coords.x = s0;
     vertices[1].tex_coords.y = t0;
     vertices[1].color = *(vec4*)&color;
-    vertices[0].mode = DRAW_MODE_TEXTURED;
+    vertices[1].mode = DRAW_MODE_TEXTURED;
 
     vertices[2].position.x = x + w;
     vertices[2].position.y = y + h;
@@ -385,6 +385,17 @@ draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, 
     float size_y = 0;
 
     texture_font_load_glyphs(fnt, string);
+
+    if (fnt->atlas->dirty)
+    {
+        log_write("Atlas updated\n");
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, fnt->atlas->width, fnt->atlas->height, 0, GL_RED, GL_UNSIGNED_BYTE, fnt->atlas->data);
+        fnt->atlas->dirty = 0;
+    }
 
     int len = strlen(string);
     if (len == 0)
@@ -422,12 +433,12 @@ draw_string_internal(float x, float y, const char *string, texture_font_t *fnt, 
         indices[i * 6 + 3] = idx + 2;
         indices[i * 6 + 4] = idx + 3;
         indices[i * 6 + 5] = idx;
-        idx += 6;
+        idx += 4;
 
-        vertices[i * 4 + 0] = (struct vertex_main){ (vec2){ x0, y0 }, (vec2){ s0, t0 }, color, DRAW_MODE_FREETYPE };
-        vertices[i * 4 + 1] = (struct vertex_main){ (vec2){ x0, y1 }, (vec2){ s0, t1 }, color, DRAW_MODE_FREETYPE };
-        vertices[i * 4 + 2] = (struct vertex_main){ (vec2){ x1, y1 }, (vec2){ s1, t1 }, color, DRAW_MODE_FREETYPE };
-        vertices[i * 4 + 3] = (struct vertex_main){ (vec2){ x1, y0 }, (vec2){ s1, t0 }, color, DRAW_MODE_FREETYPE };
+        vertices[i * 4 + 0] = (struct vertex_main){ (vec2){ x0, y0 }, (vec2){ s0, t0 }, color, DRAW_MODE_TEXTURED };
+        vertices[i * 4 + 1] = (struct vertex_main){ (vec2){ x0, y1 }, (vec2){ s0, t1 }, color, DRAW_MODE_TEXTURED };
+        vertices[i * 4 + 2] = (struct vertex_main){ (vec2){ x1, y1 }, (vec2){ s1, t1 }, color, DRAW_MODE_TEXTURED };
+        vertices[i * 4 + 3] = (struct vertex_main){ (vec2){ x1, y0 }, (vec2){ s1, t0 }, color, DRAW_MODE_TEXTURED };
 
         pen_x += glyph->advance_x;
         if (glyph->height > size_y)

@@ -38,6 +38,7 @@ xoverlay_font_load(const char *path, float size)
     result.atlas = texture_atlas_new(1024, 1024, 1);
     if (result.atlas != NULL)
     {
+        glGenTextures(1, &result.atlas->id);
         result.font = texture_font_new_from_file(result.atlas, size, path);
         if (result.font == NULL)
         {

@@ -11,7 +11,7 @@ GLuint compile_shader(const char *source, GLenum type)
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if (status == GL_FALSE)
     {
-        char error_log[256];
+        char error_log[512];
         glGetShaderInfoLog(shader, sizeof(error_log), NULL, error_log);
         log_write("GL Shader compilation error:\n%s\n", error_log);
         exit(1);
@@ -31,16 +31,16 @@ setup_matrices(GLuint shader, int textures)
 }
 
 const char *shader_ultimate_vert =
-        "#version 150\n"
+        "#version 330\n"
         "\n"
         "uniform mat4 model;\n"
         "uniform mat4 view;\n"
         "uniform mat4 projection;\n"
-        "attribute vec2 vertex;\n"
-        "attribute vec2 tex_coord;\n"
-        "attribute vec4 color;\n"
-        "attribute uint draw_mode;\n"
-        "flat out uint  frag_DrawMode;\n"
+        "in vec2 vertex;\n"
+        "in vec2 tex_coord;\n"
+        "in vec4 color;\n"
+        "in int drawmode;\n"
+        "flat out int frag_DrawMode;\n"
         "out vec4 frag_Color;\n"
         "out vec2 frag_TexCoord;\n"
         "void main()\n"
@@ -48,35 +48,35 @@ const char *shader_ultimate_vert =
         "    frag_TexCoord = tex_coord;\n"
         "    frag_Color    = color;\n"
         "    gl_Position   = projection*(view*(model*vec4(vertex,0.0,1.0)));\n"
-        "    frag_DrawMode = draw_mode;\n"
-        "}\n";
+        "    frag_DrawMode = drawmode;\n"
+        "}";
 const char *shader_ultimate_frag =
-        "#version 150\n"
+        "#version 330\n"
         "\n"
         "uniform sampler2D texture;\n"
-        "out vec4 out_Color;\n"
         "in vec4 frag_Color;\n"
         "in vec2 frag_TexCoord;\n"
-        "flat in uint frag_DrawMode;\n"
+        "flat in int frag_DrawMode;\n"
         "void main()\n"
         "{\n"
-        "   if (frag_DrawMode == 1u)\n"
-        "       out_Color = frag_Color;\n"
+        "   if (frag_DrawMode == 1)\n"
+        "       gl_FragColor = frag_Color;\n"
         "   else\n"
         "   {\n"
         "       vec4 tex = texture2D(texture, frag_TexCoord);\n"
-        "       if (frag_DrawMode == 2u)\n"
-        "           out_Color = frag_Color * tex;\n"
-        "       else if (frag_DrawMode == 3u)\n"
-        "           out_Color = vec4(in_Color.rgb, frag_Color.a * texture2D(texture, frag_TexCoord).r);\n"
+        "       if (frag_DrawMode == 2)\n"
+        "           gl_FragColor = frag_Color * tex;\n"
+        "       else if (frag_DrawMode == 3)\n"
+        "           gl_FragColor = vec4(frag_Color.rgb, frag_Color.a * texture2D(texture, frag_TexCoord).r);\n"
         "       else\n"
-        "           out_Color = vec4(1.0, 0.0, 0.0, 1.0);\n"
-        "}\n";
+        "           gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);\n"
+        "    }\n"
+        "}";
         
 void
 program_init()
 {
-    program.buffer = vertex_buffer_new("vertex:2f,tex_coord:2f,color:4f,draw_mode:1I");
+    program.buffer = vertex_buffer_new("vertex:2f,tex_coord:2f,color:4f,drawmode:1i");
     program.shader = glCreateProgram();
     GLint status;
     GLuint sh_frag = compile_shader(shader_ultimate_frag, GL_FRAGMENT_SHADER);
@@ -92,7 +92,7 @@ program_init()
     if (status == GL_FALSE)
     {
         char error_log[512];
-        glGetShaderInfoLog(program.shader, sizeof(error_log), NULL, error_log);
+        glGetProgramInfoLog(program.shader, sizeof(error_log), NULL, error_log);
         log_write("GL Shader linking error:\n%s\n", error_log);
         exit(1);
     }

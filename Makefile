@@ -1,5 +1,5 @@
 CC=$(shell sh -c "which gcc-7 || which gcc")
-CFLAGS=-O3 -Wall -fPIC -fmessage-length=0 -D_GNU_SOURCE=1 -DFREETYPE_GL_USE_VAO=1 -g3 -ggdb -Iinclude -isystemftgl -isystem/usr/local/include/freetype2 -isystem/usr/include/freetype2
+CFLAGS=-O3 -Wall -fPIC -fmessage-length=0 -D_GNU_SOURCE=1 -g3 -ggdb -Iinclude -isystemftgl -isystem/usr/local/include/freetype2 -isystem/usr/include/freetype2
 LDFLAGS=-shared -Wl,--no-undefined
 LDLIBS=-lm -lX11 -lXext -lrt -lpthread -lXfixes -lGL -lfreetype -lGLEW -lpng
 SRC_DIR=src

@@ -12,6 +12,6 @@ struct vertex_main
     vec2 position;
     vec2 tex_coords;
     vec4 color;
-    unsigned mode;
+    int mode;
 };
 
