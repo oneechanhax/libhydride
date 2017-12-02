@@ -76,7 +76,7 @@ ds_post_render()
     program_reset();
     glPopClientAttrib();
     glPopAttrib();
-    glFlush();
+//    glFlush();
     glXSwapBuffers(xoverlay_library.display, xoverlay_library.window);
     glXMakeContextCurrent(xoverlay_library.display, None, None, None);
 }

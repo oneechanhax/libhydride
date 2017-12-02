@@ -186,6 +186,8 @@ int xoverlay_glx_create_window()
     }
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+    PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC)glXGetProcAddressARB((const GLubyte *)"glXSwapIntervalEXT");
+    glXSwapIntervalEXT(xoverlay_library.display, xoverlay_library.window, 0);
     glXSwapBuffers(xoverlay_library.display, xoverlay_library.window);
 
     log_write("Initializing DS\n");
