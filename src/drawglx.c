@@ -206,7 +206,8 @@ int xoverlay_glx_create_window()
     PFNGLXSWAPINTERVALEXTPROC glXSwapIntervalEXT =
         (PFNGLXSWAPINTERVALEXTPROC) glXGetProcAddressARB(
             (const GLubyte *) "glXSwapIntervalEXT");
-    glXSwapIntervalEXT(xoverlay_library.display, xoverlay_library.window, 0);
+    if (glXSwapIntervalEXT)
+    	glXSwapIntervalEXT(xoverlay_library.display, xoverlay_library.window, 0);
     glXSwapBuffers(xoverlay_library.display, xoverlay_library.window);
 
     return 0;
