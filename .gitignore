@@ -1,3 +1,4 @@
 *.o
 bin32/*
 bin64/*
+.settings/*

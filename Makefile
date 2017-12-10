@@ -28,17 +28,17 @@ all:
 	mkdir -p $(BIN64_DIR)
 ifndef ARCH
 	$(MAKE) clean_objects
-	$(MAKE) -e ARCH=64
-	$(MAKE) clean_objects
 	$(MAKE) -e ARCH=32
+	$(MAKE) clean_objects
+	$(MAKE) -e ARCH=64
 else
 	$(MAKE) clean_objects
 	$(MAKE) $(TARGET)
 endif
 	
 install:
-	cp $(TARGET64) /lib/x86_64-linux-gnu
 	cp $(TARGET32) /lib/i386-linux-gnu
+	cp $(TARGET64) /lib/x86_64-linux-gnu
 
 .c.o:
 	$(CC) $(CFLAGS) -c $< -o $@
