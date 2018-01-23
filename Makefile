@@ -39,6 +39,7 @@ endif
 install:
 	cp $(TARGET32) /lib/i386-linux-gnu
 	cp $(TARGET64) /lib/x86_64-linux-gnu
+	cp -R include/. /usr/local/include/xoverlay
 
 .c.o:
 	$(CC) $(CFLAGS) -c $< -o $@
