@@ -5,7 +5,7 @@
  *      Author: nullifiedcat
  */
 
-#include "drawglx.h"
+#include "internal/drawglx.h"
 
 #include <GL/glew.h>
 #include <GL/gl.h>
