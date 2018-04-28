@@ -23,6 +23,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS
 target_include_directories(${PROJECT_NAME} PRIVATE 
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${GLEW_INCLUDE_DIRS}>
+)
+
+target_include_directories(${PROJECT_NAME} PUBLIC 
     $<INSTALL_INTERFACE:${include_dest}>
 )
 
