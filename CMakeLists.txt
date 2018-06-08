@@ -26,12 +26,12 @@ add_library(${PROJECT_NAME} SHARED "")
 
 set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
 
-target_include_directories(${PROJECT_NAME} PRIVATE 
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+target_include_directories(${PROJECT_NAME} PRIVATE
     $<BUILD_INTERFACE:${GLEW_INCLUDE_DIRS}>
 )
 
-target_include_directories(${PROJECT_NAME} PUBLIC 
+target_include_directories(${PROJECT_NAME} PUBLIC
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${include_dest}>
 )
 
