@@ -193,7 +193,8 @@ int xoverlay_glx_create_window()
     {
         return -1;
     }
-    if (!glXIsDirect(xoverlay_library.display, glx_state.context));
+    if (!glXIsDirect(xoverlay_library.display, glx_state.context))
+        ;
     glXMakeCurrent(xoverlay_library.display, xoverlay_library.window,
                    glx_state.context);
     glewExperimental = GL_TRUE;
@@ -207,7 +208,8 @@ int xoverlay_glx_create_window()
         (PFNGLXSWAPINTERVALEXTPROC) glXGetProcAddressARB(
             (const GLubyte *) "glXSwapIntervalEXT");
     if (glXSwapIntervalEXT)
-    	glXSwapIntervalEXT(xoverlay_library.display, xoverlay_library.window, 0);
+        glXSwapIntervalEXT(xoverlay_library.display, xoverlay_library.window,
+                           0);
     glXSwapBuffers(xoverlay_library.display, xoverlay_library.window);
 
     return 0;

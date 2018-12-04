@@ -15,43 +15,43 @@ extern "C"
 #include <X11/Xlib.h>
 #include <X11/XKBlib.h>
 
-struct xoverlay_library
-{
-    Display *display;
-    Window window;
-    Colormap colormap;
-    GC gc;
-    XGCValues gcvalues;
-    XFontStruct font;
-    int screen;
-
-    int width;
-    int height;
-
-    struct
+    struct xoverlay_library
     {
-        int x;
-        int y;
-    } mouse;
+        Display *display;
+        Window window;
+        Colormap colormap;
+        GC gc;
+        XGCValues gcvalues;
+        XFontStruct font;
+        int screen;
 
-    char init;
-    char drawing;
-    char mapped;
-};
+        int width;
+        int height;
 
-extern struct xoverlay_library xoverlay_library;
+        struct
+        {
+            int x;
+            int y;
+        } mouse;
 
-int xoverlay_init();
+        char init;
+        char drawing;
+        char mapped;
+    };
 
-void xoverlay_destroy();
+    extern struct xoverlay_library xoverlay_library;
 
-void xoverlay_show();
+    int xoverlay_init();
 
-void xoverlay_hide();
+    void xoverlay_destroy();
 
-void xoverlay_draw_begin();
+    void xoverlay_show();
 
-void xoverlay_draw_end();
+    void xoverlay_hide();
+
+    void xoverlay_draw_begin();
+
+    void xoverlay_draw_end();
 
 #ifdef __cplusplus
 }
