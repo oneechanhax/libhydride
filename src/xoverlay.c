@@ -15,9 +15,14 @@
 #include <stdio.h>
 #include <xoverlay.h>
 
+#include <dlfcn.h> // dlsym
+
 int event_ShapeNotify;
 int event_ShapeError;
 struct xoverlay_library xoverlay_library;
+
+typedef void ( *glXSwapBuffers_t) (Display *dpy, GLXDrawable drawable);
+glXSwapBuffers_t glXSwapBuffersfn;
 
 int preinit_done = 0;
 
@@ -52,6 +57,13 @@ int xoverlay_init()
         return -5;
     }
 
+    glXSwapBuffersfn = (glXSwapBuffers_t) dlsym((void *)0xFFFFFFFF, "glXSwapBuffers"); // copied from gameoverlayrenderer.so
+    
+    if (!glXSwapBuffersfn) // not my problem
+    {
+        return -6;
+    }
+    
     xoverlay_library.init = 1;
 
     return 0;
@@ -97,6 +109,6 @@ void xoverlay_draw_end()
 {
     if (!xoverlay_library.init)
         return;
-    glXSwapBuffers(xoverlay_library.display, xoverlay_library.window);
+    glXSwapBuffersfn(xoverlay_library.display, xoverlay_library.window);
     xoverlay_library.drawing = 0;
 }
