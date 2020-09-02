@@ -24,6 +24,8 @@ typedef GLXContext (*glXCreateContextAttribsARBfn)(Display *, GLXFBConfig,
                                                    GLXContext, Bool,
                                                    const int *);
 
+xoverlay_glx_state glx_state;
+
 // Helper to check for extension string presence.  Adapted from:
 //   http://www.opengl.org/resources/features/OGLextensions/
 int glx_is_extension_supported(const char *list, const char *extension)
@@ -101,7 +103,7 @@ int xoverlay_glx_create_window()
     {
         XVisualInfo *info =
             glXGetVisualFromFBConfig(xoverlay_library.display, fbc[i]);
-        if (info->depth != 32)
+        if (info->depth >= 32)
             continue;
         int samples;
         glXGetFBConfigAttrib(xoverlay_library.display, fbc[i], GLX_SAMPLES,

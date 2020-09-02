@@ -22,9 +22,9 @@ if(NOT (X11_Xext_FOUND AND X11_Xfixes_FOUND))
     message(FATAL_ERROR "Please install Xext and Xfixes")  
 endif()
 
-add_library(${PROJECT_NAME} SHARED "")
+add_library(${PROJECT_NAME} STATIC "")
 
-set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32")
+set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-m32 -fPIC" LINK_FLAGS "-m32 -fPIC")
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     $<BUILD_INTERFACE:${GLEW_INCLUDE_DIRS}>

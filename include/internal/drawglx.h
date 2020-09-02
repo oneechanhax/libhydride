@@ -11,12 +11,14 @@
 #include <GL/gl.h>
 #include <GL/glx.h>
 
-struct xoverlay_glx_state
+typedef struct 
 {
     int version_major;
     int version_minor;
     GLXContext context;
-} glx_state;
+} xoverlay_glx_state;
+
+extern xoverlay_glx_state glx_state;
 
 int xoverlay_glx_init();
 int xoverlay_glx_create_window();
