@@ -7,11 +7,11 @@
 
 #pragma once
 
-#include <GL/glew.h>
 #include <GL/gl.h>
+#include <GL/glew.h>
 #include <GL/glx.h>
 
-typedef struct 
+typedef struct
 {
     int version_major;
     int version_minor;

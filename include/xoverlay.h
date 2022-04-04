@@ -8,50 +8,48 @@
 #pragma once
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-#include <X11/Xlib.h>
 #include <X11/XKBlib.h>
+#include <X11/Xlib.h>
 
-    struct xoverlay_library
+struct xoverlay_library {
+    Display* display;
+    Window window;
+    Colormap colormap;
+    GC gc;
+    XGCValues gcvalues;
+    XFontStruct font;
+    int screen;
+
+    int width;
+    int height;
+
+    struct
     {
-        Display *display;
-        Window window;
-        Colormap colormap;
-        GC gc;
-        XGCValues gcvalues;
-        XFontStruct font;
-        int screen;
+        int x;
+        int y;
+    } mouse;
 
-        int width;
-        int height;
+    char init;
+    char drawing;
+    char mapped;
+};
 
-        struct
-        {
-            int x;
-            int y;
-        } mouse;
+extern struct xoverlay_library xoverlay_library;
 
-        char init;
-        char drawing;
-        char mapped;
-    };
+int xoverlay_init();
 
-    extern struct xoverlay_library xoverlay_library;
+void xoverlay_destroy();
 
-    int xoverlay_init();
+void xoverlay_show();
 
-    void xoverlay_destroy();
+void xoverlay_hide();
 
-    void xoverlay_show();
+void xoverlay_draw_begin();
 
-    void xoverlay_hide();
-
-    void xoverlay_draw_begin();
-
-    void xoverlay_draw_end();
+void xoverlay_draw_end();
 
 #ifdef __cplusplus
 }
