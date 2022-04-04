@@ -103,7 +103,7 @@ int xoverlay_glx_create_window()
     {
         XVisualInfo *info =
             glXGetVisualFromFBConfig(xoverlay_library.display, fbc[i]);
-        if (info->depth >= 32)
+        if (info->depth != 32)
             continue;
         int samples;
         glXGetFBConfigAttrib(xoverlay_library.display, fbc[i], GLX_SAMPLES,

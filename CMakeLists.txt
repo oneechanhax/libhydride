@@ -1,46 +1,32 @@
-# This builds a 32-bit version of library, building 64 bit is not supported yet.
 
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "Build type")
-endif()
-set(CMAKE_BUILD_TYPE_VALUES "Debug;Release" CACHE INTERNAL "List of supported build")
-set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${CMAKE_BUILD_TYPE_VALUES})
+# Libxoverlay: A transparent drawable GL layer for your desktop! 
+# Copyright (C) 2022 Rebekah Rowe
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.11)
 
-project(xoverlay LANGUAGES C VERSION 0.0.1)
-
-set(export_dest "lib/${PROJECT_NAME}-${PROJECT_VERSION}")
-set(include_dest "include/${PROJECT_NAME}-${PROJECT_VERSION}")
-set(lib_dest "${export_dest}/${CMAKE_BUILD_TYPE}")
+project(xoverlay LANGUAGES C VERSION 1.0.0)
 
 find_package(X11 REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(OpenGL REQUIRED)
 
-if(NOT (X11_Xext_FOUND AND X11_Xfixes_FOUND))
-    message(FATAL_ERROR "Please install Xext and Xfixes")  
-endif()
+add_library(xoverlay SHARED "src/drawglx.c" "src/xoverlay.c")
 
-add_library(${PROJECT_NAME} STATIC "")
+target_include_directories(xoverlay PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/")
+target_link_libraries(xoverlay PUBLIC ${GLEW_LIBRARIES} m rt pthread ${X11_X11_LIB} ${X11_Xext_LIB} ${X11_Xfixes_LIB})
 
-set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-m32 -fPIC" LINK_FLAGS "-m32 -fPIC")
-
-target_include_directories(${PROJECT_NAME} PRIVATE
-    $<BUILD_INTERFACE:${GLEW_INCLUDE_DIRS}>
-)
-
-target_include_directories(${PROJECT_NAME} PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${include_dest}>
-)
-
-target_link_libraries(${PROJECT_NAME} ${GLEW_LIBRARIES} m rt pthread ${X11_X11_LIB} ${X11_Xext_LIB} ${X11_Xfixes_LIB})
-
-add_subdirectory(include)
-add_subdirectory(src)
-
-install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME} DESTINATION "${lib_dest}")
-install(FILES "include/xoverlay.h" DESTINATION "${include_dest}")
-install(EXPORT ${PROJECT_NAME} DESTINATION "${lib_dest}")
-install(FILES ${PROJECT_NAME}-config.cmake DESTINATION ${export_dest})
+install(TARGETS ${PROJECT_NAME} DESTINATION "lib/")
+install(FILES "include/xoverlay.h" DESTINATION "include/")
