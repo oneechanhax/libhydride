@@ -1,16 +1,7 @@
-# Installation
+# LibXoverlay
 
-## Requirements
+LibXoverlay is a transparent drawable GL layer for your desktop!
 
-libX11 libXext libpthread libXfixes libGLEW
+### Credits
 
-both x64 and x32 versions
-
-```
-make
-sudo make install
-```
-
-# Usage
-
-Please refer to https://github.com/nullifiedcat/xoverlay-glez-example
+nullifiedcat: original creator <3
