@@ -5,11 +5,7 @@
  *      Author: nullifiedcat
  */
 
-#include "internal/drawglx.h"
-
-#include <GL/gl.h>
-#include <GL/glew.h>
-#include <GL/glx.h>
+#include "drawglx.h"
 
 #include <X11/extensions/Xfixes.h>
 #include <X11/extensions/shape.h>
