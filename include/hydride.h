@@ -1,6 +1,6 @@
 
 /*
- * Libxoverlay: A transparent drawable GL layer for your desktop! 
+ * Libhydride: A transparent drawable GL layer for your desktop! 
  * Copyright (C) 2022 Rebekah Rowe
  *
  * This program is free software: you can redistribute it and/or modify
@@ -26,23 +26,42 @@ extern "C" {
 #include <X11/XKBlib.h>
 #include <X11/Xlib.h>
 
-#include "hydride.h"
+struct hydride_library {
+    Display* display;
+    Window window;
+    Colormap colormap;
+    GC gc;
+    XGCValues gcvalues;
+    XFontStruct font;
+    int screen;
 
-typedef struct hydride_library xoverlay_library_t; // only api break in rename
+    int width;
+    int height;
 
-extern struct hydride_library xoverlay_library;
+    struct
+    {
+        int x;
+        int y;
+    } mouse;
 
-inline int xoverlay_init() { return hydride_init(); }
+    char init;
+    char drawing;
+    char mapped;
+};
 
-inline void xoverlay_destroy() { hydride_destroy(); }
+extern struct hydride_library hydride_library;
 
-inline void xoverlay_show() { hydride_show(); }
+int hydride_init();
 
-inline void xoverlay_hide() { hydride_hide(); }
+void hydride_destroy();
 
-inline void xoverlay_draw_begin() { hydride_draw_begin(); }
+void hydride_show();
 
-inline void xoverlay_draw_end() { hydride_draw_end(); }
+void hydride_hide();
+
+void hydride_draw_begin();
+
+void hydride_draw_end();
 
 #ifdef __cplusplus
 }

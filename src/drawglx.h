@@ -1,6 +1,6 @@
 
 /*
- * Libxoverlay: A transparent drawable GL layer for your desktop! 
+ * Libhydride: A transparent drawable GL layer for your desktop! 
  * Copyright (C) 2022 Rebekah Rowe
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,10 +28,10 @@ typedef struct
     int version_major;
     int version_minor;
     GLXContext context;
-} xoverlay_glx_state;
+} hydride_glx_state;
 
-extern xoverlay_glx_state glx_state;
+extern hydride_glx_state glx_state;
 
-int xoverlay_glx_init();
-int xoverlay_glx_create_window();
-int xoverlay_glx_destroy();
+int hydride_glx_init();
+int hydride_glx_create_window();
+int hydride_glx_destroy();
